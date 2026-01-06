@@ -20,7 +20,33 @@
         .modal-content { background-color: white; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); max-width: 90%; width: 500px; max-height: 90vh; overflow-y: auto; position: relative; }
         .logo-img { max-width: 100%; height: auto; margin: 0 auto 1.5rem; display: block; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         #scanner-modal .modal-content { max-width: 95%; width: 600px; }
-        @media (max-width: 640px) { .sm\:table-cell { display: none !important; } }
+        /* Estilos para o Scanner Otimizado */
+        .scanner-container { width: 100%; min-height: 350px; position: relative; overflow: hidden; border-radius: 8px; background: black; margin-bottom: 1rem; }
+        .scanner-guide { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            width: 70%; 
+            height: 150px; 
+            border: 2px solid #3B82F6; 
+            border-radius: 8px; 
+            z-index: 10; 
+            pointer-events: none; 
+            box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.5);
+        }
+        .scanner-corner { position: absolute; width: 20px; height: 20px; border-color: #3B82F6; }
+        .corner-tl { top: -2px; left: -2px; border-top: 3px solid; border-left: 3px solid; }
+        .corner-tr { top: -2px; right: -2px; border-top: 3px solid; border-right: 3px solid; }
+        .corner-bl { bottom: -2px; left: -2px; border-bottom: 3px solid; border-left: 3px solid; }
+        .corner-br { bottom: -2px; right: -2px; border-bottom: 3px solid; border-right: 3px solid; }
+        .scanner-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); }
+        @media (max-width: 640px) { 
+            .sm\:table-cell { display: none !important; } 
+            #scanner-modal .modal-content { width: 95%; max-width: 95%; padding: 1rem; }
+            .scanner-container { min-height: 280px; }
+            .scanner-guide { width: 80%; height: 120px; }
+        }
         @media print { .no-print { display: none !important; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 10pt; } }
     </style>
 </head>
@@ -29,7 +55,7 @@
     <div id="app" class="container">
         <header class="py-6 mb-8 bg-white shadow-md rounded-lg no-print">
             <h1 class="text-3xl font-bold text-center text-red-700">Souza Farma - Controle de Validade (ONLINE)</h1>
-            <p class="text-center text-gray-500 mt-2">Pronto para Hospedagem Externa e Acesso Móvel.</p>
+            <p class="text-center text-gray-500 mt-2">Sistema Gerencial de Validades</p>
         </header>
 
         <div id="message-container" class="fixed top-4 right-4 space-y-2 no-print"></div>
@@ -50,18 +76,18 @@
                             Importar Produtos (Inicial)
                         </button>
                         <button onclick="openImportLotesModal()" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition transform hover:scale-[1.01]">
-                            Atualizar Lotes c/ Validade (Excel)
+                            Atualizar Lotes (Excel)
                         </button>
                         <button onclick="confirmDeleteAll()" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition transform hover:scale-[1.01]">
-                            ❌ Excluir TODO o Inventário
+                            ❌ Limpar Inventário
                         </button>
                     </div>
 
                     <div class="mb-6 border p-4 rounded-lg bg-blue-50">
-                        <h3 class="text-lg font-semibold mb-2 text-blue-700">Lançamento Rápido (Novo Lote)</h3>
+                        <h3 class="text-lg font-semibold mb-2 text-blue-700">Adicionar Lote Rápido</h3>
                         <div class="flex space-x-2">
-                            <input type="text" id="quick-search-input" class="flex-grow p-2 border border-blue-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="Escaneie Cód. Barras/Interno..." onchange="quickLookup(this.value, 'LOTE')">
+                            <input type="text" id="quick-search-input" class="flex-grow p-2 border border-blue-300 rounded-lg focus:ring-blue-500"
+                                placeholder="Cód. Barras ou Interno..." onchange="quickLookup(this.value, 'LOTE')">
                             <button onclick="openScannerModal('LOTE')" class="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg transition transform hover:scale-105">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
                             </button>
@@ -77,28 +103,36 @@
 
                     <div class="flex space-x-2 mb-4 no-print">
                         <button onclick="exportToCsv()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md text-sm">
-                            Exportar para Excel (CSV)
+                            Exportar Excel (CSV)
                         </button>
                         <button onclick="printFilteredList()" class="flex-1 bg-gray-700 hover:bg-gray-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md text-sm">
-                            Imprimir / Exportar PDF
+                            Imprimir PDF
                         </button>
                     </div>
 
                     <div class="mb-4 no-print">
                         <label for="search-input" class="block text-sm font-medium text-gray-700 mb-1">Filtrar Lista (Cód. Barras, Interno ou Descrição):</label>
                         <div class="flex space-x-2">
-                            <input type="text" id="search-input" class="flex-grow p-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
-                                placeholder="Digite para filtrar..." onkeyup="applyFilters()">
+                            <input type="text" id="search-input" class="flex-grow p-2 border border-gray-300 rounded-lg focus:ring-green-500"
+                                placeholder="Digite para buscar..." onkeyup="applyFilters()">
                             <button onclick="openScannerModal('BUSCA')" class="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg transition transform hover:scale-105" title="Scanner para Busca">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                             </button>
-                            <button onclick="clearSearch()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 rounded-lg text-xs font-bold" title="Limpar Filtro">LIMPAR</button>
+                            <button onclick="clearSearch()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 rounded-lg text-xs font-bold">LIMPAR</button>
                         </div>
+                    </div>
+
+                    <!-- Legenda de Cores Mantida -->
+                    <div class="flex flex-wrap text-xs mb-4 p-3 bg-gray-50 rounded-lg border no-print">
+                        <span class="mr-4 flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-red-400 mr-1 border border-red-600"></span> Vencido/Mês Atual (0)</span>
+                        <span class="mr-4 flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-yellow-200 mr-1 border border-yellow-400"></span> Vence em 1 Mês</span>
+                        <span class="mr-4 flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-orange-100 mr-1 border border-orange-300"></span> Vence em 2 Meses</span>
+                        <span class="flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-green-100 mr-1 border border-green-300"></span> Vence em 3 Meses</span>
                     </div>
                     
                     <div class="mb-4 no-print">
                         <label for="expiration-filter" class="block text-sm font-medium text-gray-700 mb-1">Filtrar por Mês de Vencimento:</label>
-                        <input type="month" id="expiration-filter" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-purple-500" onchange="applyFilters()">
+                        <input type="month" id="expiration-filter" class="w-full p-2 border border-gray-300 rounded-lg" onchange="applyFilters()">
                     </div>
 
                     <div class="max-h-[600px] overflow-y-auto mt-4 border border-gray-200 rounded-lg">
@@ -125,17 +159,66 @@
     </div>
 
     <!-- Modais -->
-    <div id="scanner-modal" class="modal-overlay hidden no-print"><div class="modal-content"><button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="closeScannerModal()"> &times; </button><h2 class="text-xl font-semibold mb-4 text-blue-700">Scanner de Código de Barras</h2><div id="reader"></div><p class="mt-4 text-center text-gray-600">Posicione o código de barras no centro.</p></div></div>
+    <div id="medication-modal" class="modal-overlay hidden no-print">
+        <div class="modal-content">
+            <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="closeModal()"> &times; </button>
+            <h2 class="text-2xl font-semibold mb-6 text-blue-700" id="form-title"> Cadastrar Novo Produto </h2>
+            <form id="medication-form">
+                <input type="hidden" id="doc-id">
+                <div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Cód. Barras</label><input type="text" id="barcode" required class="w-full p-2 border border-gray-300 rounded-lg"></div>
+                <div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Cód. Interno</label><input type="text" id="internalCode" required class="w-full p-2 border border-gray-300 rounded-lg"></div>
+                <div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Descrição</label><input type="text" id="description" required class="w-full p-2 border border-gray-300 rounded-lg"></div>
+                <div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Laboratório</label><input type="text" id="laboratory" required class="w-full p-2 border border-gray-300 rounded-lg"></div>
+                <div class="flex space-x-4 mb-6">
+                    <div class="flex-1"><label class="block text-sm font-medium text-gray-700 mb-1">Qtd</label><input type="number" id="quantity" required class="w-full p-2 border border-gray-300 rounded-lg"></div>
+                    <div class="flex-1"><label class="block text-sm font-medium text-gray-700 mb-1">Validade (MM/AAAA)</label><input type="month" id="expirationDate" class="w-full p-2 border border-gray-300 rounded-lg"></div>
+                </div>
+                <button type="submit" id="submit-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md">Salvar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal do Scanner Otimizado -->
+    <div id="scanner-modal" class="modal-overlay hidden no-print">
+        <div class="modal-content">
+            <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl z-20" onclick="closeScannerModal()"> &times; </button>
+            <h2 class="text-xl font-semibold mb-4 text-blue-700">Scanner de Código de Barras</h2>
+            <p class="text-sm text-gray-600 mb-4">Posicione o código de barras dentro da área de foco</p>
+            
+            <div class="scanner-container">
+                <div class="scanner-overlay"></div>
+                <div class="scanner-guide">
+                    <div class="scanner-corner corner-tl"></div>
+                    <div class="scanner-corner corner-tr"></div>
+                    <div class="scanner-corner corner-bl"></div>
+                    <div class="scanner-corner corner-br"></div>
+                </div>
+                <div id="reader" class="w-full h-full"></div>
+            </div>
+            
+            <div class="mt-4 flex flex-wrap gap-2 justify-center">
+                <button onclick="toggleCamera()" id="toggle-camera-btn" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm">
+                    Alternar Câmera
+                </button>
+                <button onclick="stopScanner()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm">
+                    Parar Scanner
+                </button>
+            </div>
+            <p class="mt-4 text-center text-gray-600 text-sm">A leitura ocorre automaticamente</p>
+        </div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, addDoc, setDoc, onSnapshot, collection, query, where, deleteDoc, getDoc, updateDoc, Timestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, addDoc, onSnapshot, collection, query, deleteDoc, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const APP_CONFIG = { apiKey: "AIzaSyDc9-jix-tXCV8JHzivDR8pY1iCNNJeDPg", authDomain: "controle-de-validade-e708a.firebaseapp.com", projectId: "controle-de-validade-e708a", storageBucket: "controle-de-validade-e708a.firebasestorage.app", messagingSenderId: "300173058270", appId: "1:300173058270:web:970549624a4c46af3d624f" };
         const appId = typeof __app_id !== 'undefined' ? __app_id : "controle-de-validade-e708a";
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         let db, auth, userId = null, isFirebaseReady = false, allMedications = [], currentFilteredList = [], html5QrCode = null;
+        let isRearCamera = true;
+        let currentCameraId = null;
 
         async function init() {
             try {
@@ -146,7 +229,7 @@
                 else await signInAnonymously(auth);
                 onAuthStateChanged(auth, u => { if(u) { userId = u.uid; setupListener(); } });
                 isFirebaseReady = true;
-            } catch (e) { console.error(e); setupDummyData(); }
+            } catch (e) { console.error(e); }
         }
 
         function setupListener() {
@@ -157,7 +240,7 @@
         }
 
         function sortAndRender() {
-            allMedications.sort((a, b) => (a.expirationDate || '9999').localeCompare(b.expirationDate || '9999'));
+            allMedications.sort((a, b) => (a.expirationDate || '9999-12').localeCompare(b.expirationDate || '9999-12'));
             applyFilters();
         }
 
@@ -165,7 +248,7 @@
             const term = document.getElementById('search-input').value.toLowerCase().trim();
             const exp = document.getElementById('expiration-filter').value;
             let filtered = allMedications;
-            if (term) filtered = filtered.filter(m => m.searchTerms.includes(term));
+            if (term) filtered = filtered.filter(m => (m.barcode + m.internalCode + m.description).toLowerCase().includes(term));
             if (exp) filtered = filtered.filter(m => m.expirationDate === exp);
             renderMedications(filtered);
         };
@@ -183,7 +266,7 @@
             meds.forEach(m => {
                 const diff = m.expirationDate ? monthDiff(m.expirationDate, curMonth) : -1;
                 let bg = 'bg-white', text = 'text-gray-700';
-                if (diff === 0) { bg = 'bg-red-100'; text = 'text-red-800 font-bold'; }
+                if (diff <= 0 && m.expirationDate) { bg = 'bg-red-100'; text = 'text-red-800 font-bold'; }
                 else if (diff === 1) { bg = 'bg-yellow-100'; text = 'text-yellow-800 font-bold'; }
                 else if (diff === 2) { bg = 'bg-orange-50'; text = 'text-orange-800'; }
                 else if (diff === 3) { bg = 'bg-green-50'; text = 'text-green-800'; }
@@ -198,7 +281,7 @@
                     <td class="px-2 py-1 font-bold">${m.expirationDate ? m.expirationDate.split('-').reverse().join('/') : '---'}</td>
                     <td class="px-2 py-1">${m.quantity}</td>
                     <td class="px-2 py-1 text-right no-print">
-                        <button onclick="loadForEdit('${m.id}')" class="text-blue-600 hover:underline mr-2">Edit</button>
+                        <button onclick="loadForEdit('${m.id}')" class="text-blue-600 hover:underline mr-2">Editar</button>
                         <button onclick="deleteMedication('${m.id}')" class="text-red-600 hover:underline">Exc</button>
                     </td>`;
                 list.appendChild(row);
@@ -212,39 +295,195 @@
             return (y1 - y2) * 12 + (m1 - m2);
         }
 
-        // SCANNER LOGIC
-        window.openScannerModal = function(mode) {
+        // SCANNER OTIMIZADO PARA CELULAR
+        window.openScannerModal = async function(mode) {
             window.scannerMode = mode;
-            // LIMPEZA AUTOMÁTICA: Se for busca, limpa o filtro atual
+            
+            // Limpa filtro se for busca
             if(mode === 'BUSCA') {
                 document.getElementById('search-input').value = '';
                 applyFilters();
             }
-            document.getElementById('scanner-modal').classList.remove('hidden');
-            html5QrCode = new Html5Qrcode("reader");
-            const config = { fps: 15, qrbox: { width: 350, height: 100 }, supportedScanTypes: [0, 1] }; // 0: CODE_128, 1: EAN_13
-            html5QrCode.start({ facingMode: "environment" }, config, (text) => {
-                closeScannerModal();
-                if(window.scannerMode === 'BUSCA') {
-                    document.getElementById('search-input').value = text;
-                    applyFilters();
+            
+            // Mostra o modal
+            const modal = document.getElementById('scanner-modal');
+            modal.classList.remove('hidden');
+            
+            // Prepara o contêiner do scanner
+            const readerElement = document.getElementById('reader');
+            readerElement.innerHTML = '';
+            readerElement.style.width = '100%';
+            readerElement.style.height = '350px';
+            readerElement.style.position = 'relative';
+            
+            try {
+                html5QrCode = new Html5Qrcode("reader");
+                
+                // Configuração otimizada para celular
+                const config = {
+                    fps: 10, // Taxa de quadros reduzida para melhor performance
+                    qrbox: { 
+                        width: 250, 
+                        height: 100 // Altura ajustada para códigos de barras
+                    },
+                    aspectRatio: 1.7777778, // Proporção 16:9 comum em celulares
+                    disableFlip: false
+                };
+
+                // Formato de códigos de barras suportados
+                const formats = [
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.UPC_A,
+                    Html5QrcodeSupportedFormats.UPC_E,
+                    Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.CODE_93,
+                    Html5QrcodeSupportedFormats.CODABAR,
+                    Html5QrcodeSupportedFormats.ITF,
+                    Html5QrcodeSupportedFormats.RSS_14,
+                    Html5QrcodeSupportedFormats.RSS_EXPANDED
+                ];
+
+                // Tenta obter a lista de câmeras
+                const cameras = await Html5Qrcode.getCameras();
+                
+                if (cameras && cameras.length > 0) {
+                    // Encontra a câmera traseira (environment) ou usa a primeira disponível
+                    const rearCamera = cameras.find(cam => cam.label.toLowerCase().includes('back') || cam.label.toLowerCase().includes('rear') || cam.label.toLowerCase().includes('environment'));
+                    const frontCamera = cameras.find(cam => cam.label.toLowerCase().includes('front') || cam.label.toLowerCase().includes('user'));
+                    
+                    // Usa câmera traseira se disponível, senão frontal, senão primeira disponível
+                    const cameraId = isRearCamera && rearCamera ? rearCamera.id : 
+                                     !isRearCamera && frontCamera ? frontCamera.id : 
+                                     cameras[0].id;
+                    
+                    currentCameraId = cameraId;
+                    
+                    // Inicia o scanner
+                    await html5QrCode.start(
+                        cameraId,
+                        config,
+                        onScanSuccess,
+                        onScanError
+                    ).catch(async (err) => {
+                        console.log("Tentando com configuração alternativa...");
+                        // Tenta com facingMode se houver erro com cameraId
+                        await html5QrCode.start(
+                            { facingMode: isRearCamera ? "environment" : "user" },
+                            { 
+                                fps: 10,
+                                qrbox: { width: 250, height: 100 }
+                            },
+                            onScanSuccess,
+                            onScanError
+                        );
+                    });
+                    
+                    showMessage("Scanner iniciado. Posicione o código de barras na área de foco.", "info");
                 } else {
-                    quickLookup(text);
+                    throw new Error("Nenhuma câmera encontrada.");
                 }
-            }, () => {});
+                
+            } catch (err) {
+                console.error("Erro ao iniciar scanner:", err);
+                showMessage("Erro ao acessar a câmera: " + err.message, "error");
+                closeScannerModal();
+            }
         };
 
+        function onScanSuccess(decodedText) {
+            // Adiciona pequeno atraso para feedback visual
+            setTimeout(() => {
+                closeScannerModal();
+                
+                if(window.scannerMode === 'BUSCA') {
+                    document.getElementById('search-input').value = decodedText;
+                    applyFilters();
+                    showMessage(`Código escaneado: ${decodedText}`, "success");
+                } else {
+                    // Para modo LOTE
+                    document.getElementById('quick-search-input').value = decodedText;
+                    showMessage(`Código escaneado: ${decodedText}`, "success");
+                    // Chama a função de lookup se existir
+                    if (typeof quickLookup === 'function') {
+                        quickLookup(decodedText);
+                    }
+                }
+            }, 300);
+        }
+
+        function onScanError(errorMessage) {
+            // Silencia erros comuns
+            if (!errorMessage.includes("NotFoundException") && 
+                !errorMessage.includes("NotAllowedError") &&
+                !errorMessage.includes("NotReadableError")) {
+                console.log("Scan error:", errorMessage);
+            }
+        }
+
         window.closeScannerModal = function() {
-            document.getElementById('scanner-modal').classList.add('hidden');
-            if (html5QrCode) html5QrCode.stop().catch(() => {});
+            const modal = document.getElementById('scanner-modal');
+            modal.classList.add('hidden');
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    html5QrCode.clear();
+                }).catch(err => {
+                    console.log("Scanner parado");
+                });
+            }
+        };
+
+        window.toggleCamera = async function() {
+            if (html5QrCode && html5QrCode.isScanning) {
+                try {
+                    await html5QrCode.stop();
+                    isRearCamera = !isRearCamera;
+                    
+                    // Reabre o scanner com a câmera alternativa
+                    window.scannerMode = window.scannerMode || 'BUSCA';
+                    await openScannerModal(window.scannerMode);
+                    
+                    showMessage(`Câmera alterada para ${isRearCamera ? 'traseira' : 'frontal'}`, "info");
+                } catch (err) {
+                    console.error("Erro ao alternar câmera:", err);
+                    showMessage("Erro ao alternar câmera", "error");
+                }
+            }
+        };
+
+        window.stopScanner = function() {
+            closeScannerModal();
         };
 
         // CRUD WRAPPERS
         window.openCadastroModal = () => document.getElementById('medication-modal').classList.remove('hidden');
         window.closeModal = () => { document.getElementById('medication-modal').classList.add('hidden'); resetForm(); };
-        window.deleteMedication = async (id) => { if(confirm('Excluir este lote?')) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id)); };
         
-        // Export/Print (Simplificados)
+        window.deleteMedication = async (id) => { 
+            if(confirm('Excluir este lote?')) {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id)); 
+                showMessage("Lote removido.");
+            }
+        };
+
+        // Função para mostrar mensagens
+        function showMessage(text, type = "info") {
+            const container = document.getElementById('message-container');
+            const message = document.createElement('div');
+            message.className = `message-box ${type === 'error' ? 'bg-red-100 text-red-800 border border-red-200' : 
+                                 type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 
+                                 type === 'warning' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' : 
+                                 'bg-blue-100 text-blue-800 border border-blue-200'}`;
+            message.textContent = text;
+            container.appendChild(message);
+            
+            setTimeout(() => {
+                message.style.opacity = '0';
+                setTimeout(() => container.removeChild(message), 300);
+            }, 3000);
+        }
+
         window.exportToCsv = () => {
             let csv = "Cód. Barras;Cód. Interno;Descrição;Laboratório;Validade;Qtd\n";
             currentFilteredList.forEach(m => csv += `${m.barcode};${m.internalCode};${m.description};${m.laboratory};${m.expirationDate};${m.quantity}\n`);
@@ -253,7 +492,83 @@
             link.href = URL.createObjectURL(blob);
             link.download = 'relatorio_souzafarma.csv';
             link.click();
+            showMessage("Relatório exportado para CSV", "success");
         };
+
+        window.printFilteredList = () => {
+            window.print();
+        };
+
+        // Funções auxiliares (mantidas para compatibilidade)
+        window.quickLookup = function(code) {
+            showMessage(`Buscando código: ${code}`, "info");
+            document.getElementById('search-input').value = code;
+            applyFilters();
+        };
+
+        window.resetForm = function() {
+            document.getElementById('medication-form').reset();
+            document.getElementById('doc-id').value = '';
+            document.getElementById('form-title').textContent = 'Cadastrar Novo Produto';
+            document.getElementById('submit-button').textContent = 'Salvar';
+        };
+
+        window.loadForEdit = async function(id) {
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    document.getElementById('doc-id').value = id;
+                    document.getElementById('barcode').value = data.barcode || '';
+                    document.getElementById('internalCode').value = data.internalCode || '';
+                    document.getElementById('description').value = data.description || '';
+                    document.getElementById('laboratory').value = data.laboratory || '';
+                    document.getElementById('quantity').value = data.quantity || 0;
+                    document.getElementById('expirationDate').value = data.expirationDate || '';
+                    document.getElementById('form-title').textContent = 'Editar Produto';
+                    document.getElementById('submit-button').textContent = 'Atualizar';
+                    openCadastroModal();
+                }
+            } catch (error) {
+                console.error("Erro ao carregar para edição:", error);
+                showMessage("Erro ao carregar dados", "error");
+            }
+        };
+
+        // Manipulador do formulário
+        document.getElementById('medication-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                barcode: document.getElementById('barcode').value,
+                internalCode: document.getElementById('internalCode').value,
+                description: document.getElementById('description').value,
+                laboratory: document.getElementById('laboratory').value,
+                quantity: parseInt(document.getElementById('quantity').value) || 0,
+                expirationDate: document.getElementById('expirationDate').value,
+                createdAt: new Date().toISOString()
+            };
+            
+            const docId = document.getElementById('doc-id').value;
+            
+            try {
+                if (docId) {
+                    // Atualizar
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', docId), formData);
+                    showMessage("Produto atualizado com sucesso!", "success");
+                } else {
+                    // Criar novo
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), formData);
+                    showMessage("Produto cadastrado com sucesso!", "success");
+                }
+                
+                closeModal();
+            } catch (error) {
+                console.error("Erro ao salvar:", error);
+                showMessage("Erro ao salvar: " + error.message, "error");
+            }
+        });
 
         init();
     </script>
