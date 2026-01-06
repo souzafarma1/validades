@@ -23,10 +23,9 @@
         @media (max-width: 640px) { .sm\:table-cell { display: none !important; } }
         @media print { .no-print { display: none !important; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 10pt; } }
         
-        /* Estilos aprimorados para o scanner */
-        #reader { width: 100% !important; height: 400px !important; position: relative; }
-        #reader video { width: 100% !important; height: 100% !important; object-fit: cover; border-radius: 8px; }
-        #reader canvas { display: none; }
+        /* Estilos aprimorados para o scanner - CORRIGIDO */
+        #reader { width: 100% !important; height: 350px !important; position: relative; overflow: hidden; }
+        #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; border-radius: 8px; }
         .html5-qrcode-element { display: none; }
         .scanner-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; height: 30%; border: 4px solid rgba(59, 130, 246, 0.7); border-radius: 8px; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5); pointer-events: none; z-index: 1; }
         .scanner-line { position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.8), transparent); animation: scan 2s linear infinite; }
@@ -38,6 +37,9 @@
         .torch-btn.active { background: #f59e0b; }
         .flip-btn { background: #6366f1; color: white; }
         .flip-btn.active { background: #8b5cf6; }
+        .scanner-error { color: #dc2626; font-size: 0.875rem; text-align: center; padding: 1rem; }
+        .camera-permission { text-align: center; padding: 1rem; }
+        .camera-permission button { margin-top: 0.5rem; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -179,6 +181,13 @@
                 <div class="scanner-frame">
                     <div class="scanner-line"></div>
                 </div>
+                <div id="scanner-error" class="scanner-error hidden"></div>
+                <div id="camera-permission" class="camera-permission hidden">
+                    <p class="text-red-600 mb-2">Permissão da câmera necessária</p>
+                    <button onclick="requestCameraPermission()" class="bg-blue-600 text-white px-4 py-2 rounded-lg">
+                        Permitir Câmera
+                    </button>
+                </div>
             </div>
             
             <div class="scanner-instructions">
@@ -221,6 +230,7 @@
         let db, auth, userId = null, isFirebaseReady = false, allMedications = [], currentFilteredList = [], html5QrCode = null;
         let isTorchOn = false;
         let isBackCamera = true;
+        let cameraStream = null;
 
         async function init() {
             try {
@@ -297,7 +307,7 @@
             return (y1 - y2) * 12 + (m1 - m2);
         }
 
-        window.openScannerModal = function(mode) {
+        window.openScannerModal = async function(mode) {
             window.scannerMode = mode;
             if(mode === 'BUSCA') {
                 document.getElementById('search-input').value = '';
@@ -309,66 +319,144 @@
             isBackCamera = true;
             document.getElementById('torch-btn').classList.remove('active');
             document.getElementById('flip-btn').classList.remove('active');
+            document.getElementById('scanner-error').classList.add('hidden');
+            document.getElementById('camera-permission').classList.add('hidden');
             
             document.getElementById('scanner-modal').classList.remove('hidden');
             
-            // Configurações otimizadas para iPhones
-            const config = {
-                fps: 25, // Aumentado para melhor fluidez
-                qrbox: { 
-                    width: 280, 
-                    height: 100 // Área de leitura maior
-                },
-                aspectRatio: 1.0, // Melhor para iPhones
-                disableFlip: false,
-                formatsToSupport: [
-                    Html5QrcodeSupportedFormats.CODE_128,
-                    Html5QrcodeSupportedFormats.EAN_13,
-                    Html5QrcodeSupportedFormats.EAN_8,
-                    Html5QrcodeSupportedFormats.CODE_39,
-                    Html5QrcodeSupportedFormats.UPC_A,
-                    Html5QrcodeSupportedFormats.UPC_E
-                ]
-            };
-
-            // Tentar usar a câmera traseira primeiro
-            const cameraConfig = {
-                facingMode: isBackCamera ? "environment" : "user",
-                width: { ideal: 1920 },
-                height: { ideal: 1080 }
-            };
-
-            html5QrCode = new Html5Qrcode("reader");
-            
-            html5QrCode.start(
-                cameraConfig, 
-                config, 
-                (text) => {
-                    // Sucesso na leitura
-                    closeScannerModal();
-                    playSuccessSound();
-                    
-                    if(window.scannerMode === 'BUSCA') {
-                        document.getElementById('search-input').value = text;
-                        applyFilters();
-                        showMessage("Código lido com sucesso!", "success");
-                    } else {
-                        quickLookup(text);
-                        showMessage("Código lido com sucesso!", "success");
-                    }
-                }, 
-                (errorMessage) => {
-                    // Ignorar mensagens de erro durante a leitura normal
-                    console.log("Scanning:", errorMessage);
+            // Limpar o leitor anterior
+            if (html5QrCode && html5QrCode.isScanning) {
+                try {
+                    await html5QrCode.stop();
+                } catch (e) {
+                    console.log("Parando scanner anterior...");
                 }
-            ).catch(err => {
-                console.error("Erro ao iniciar scanner:", err);
-                showMessage("Erro ao acessar a câmera. Verifique as permissões.", "error");
-            });
+            }
+            
+            // Verificar permissão da câmera primeiro
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: isBackCamera ? "environment" : "user",
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    } 
+                });
+                stream.getTracks().forEach(track => track.stop());
+            } catch (error) {
+                console.error("Erro de permissão da câmera:", error);
+                document.getElementById('camera-permission').classList.remove('hidden');
+                document.getElementById('reader').innerHTML = '';
+                return;
+            }
+            
+            // Iniciar o scanner
+            setTimeout(() => {
+                startScanner();
+            }, 100);
+        };
+
+        async function startScanner() {
+            try {
+                html5QrCode = new Html5Qrcode("reader");
+                
+                // Configurações simplificadas para iPhones
+                const config = {
+                    fps: 10, // Reduzido para melhor performance
+                    qrbox: { 
+                        width: 250, 
+                        height: 100
+                    },
+                    aspectRatio: 1.7777778, // 16:9 - padrão para câmeras
+                    disableFlip: false
+                };
+
+                const cameraId = await getCameraId();
+                
+                await html5QrCode.start(
+                    cameraId,
+                    config,
+                    (decodedText) => {
+                        // Sucesso na leitura
+                        handleScanSuccess(decodedText);
+                    },
+                    (errorMessage) => {
+                        // Ignorar mensagens de erro durante a leitura normal
+                        console.log("Scanning:", errorMessage);
+                    }
+                ).then(() => {
+                    console.log("Scanner iniciado com sucesso");
+                }).catch(err => {
+                    console.error("Erro ao iniciar scanner:", err);
+                    showScannerError("Não foi possível iniciar a câmera. Tente novamente.");
+                });
+                
+            } catch (error) {
+                console.error("Erro no scanner:", error);
+                showScannerError("Erro ao acessar a câmera: " + error.message);
+            }
+        }
+
+        async function getCameraId() {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                
+                if (videoDevices.length === 0) {
+                    throw new Error("Nenhuma câmera encontrada");
+                }
+                
+                // Tentar encontrar a câmera traseira
+                if (isBackCamera) {
+                    const backCameras = videoDevices.filter(device => 
+                        device.label.toLowerCase().includes('back') || 
+                        device.label.toLowerCase().includes('traseira') ||
+                        device.label.toLowerCase().includes('rear')
+                    );
+                    
+                    if (backCameras.length > 0) {
+                        return backCameras[0].deviceId;
+                    }
+                }
+                
+                // Se não encontrar câmera específica, usar a primeira disponível
+                return videoDevices[0].deviceId;
+                
+            } catch (error) {
+                console.log("Usando facingMode como fallback");
+                return {
+                    facingMode: isBackCamera ? "environment" : "user"
+                };
+            }
+        }
+
+        function handleScanSuccess(decodedText) {
+            closeScannerModal();
+            playSuccessSound();
+            
+            if(window.scannerMode === 'BUSCA') {
+                document.getElementById('search-input').value = decodedText;
+                applyFilters();
+                showMessage("Código lido com sucesso! Buscando...", "success");
+            } else {
+                quickLookup(decodedText);
+                showMessage("Código lido com sucesso!", "success");
+            }
+        }
+
+        function showScannerError(message) {
+            const errorDiv = document.getElementById('scanner-error');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+
+        window.requestCameraPermission = function() {
+            document.getElementById('camera-permission').classList.add('hidden');
+            openScannerModal(window.scannerMode);
         };
 
         window.toggleTorch = async function() {
-            if (!html5QrCode || !html5QrCode.getRunningTrackCapabilities) return;
+            if (!html5QrCode) return;
             
             try {
                 const videoTrack = html5QrCode.getRunningTrack();
@@ -382,9 +470,11 @@
                     torchBtn.innerHTML = isTorchOn ? 
                         '<span class="flex items-center justify-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1"/><path d="M6 7h4l2-5h4l2 5h4v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2-5h4l2 5Z"/><path d="M9 17v3"/></svg> Lanterna ON</span>' :
                         '<span class="flex items-center justify-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1"/><path d="M6 7h4l2-5h4l2 5h4v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2-5h4l2 5Z"/><path d="M9 17v3"/></svg> Lanterna</span>';
+                } else {
+                    showMessage("Lanterna não disponível neste dispositivo", "info");
                 }
             } catch (error) {
-                console.log("Lanterna não suportada neste dispositivo");
+                console.log("Erro ao controlar lanterna:", error);
             }
         };
 
@@ -398,33 +488,20 @@
             // Fechar e reabrir o scanner com a câmera oposta
             html5QrCode.stop().then(() => {
                 const currentMode = window.scannerMode;
-                setTimeout(() => openScannerModal(currentMode), 500);
+                setTimeout(() => openScannerModal(currentMode), 300);
             }).catch(() => {
                 const currentMode = window.scannerMode;
-                openScannerModal(currentMode);
+                setTimeout(() => openScannerModal(currentMode), 300);
             });
         };
 
         function playSuccessSound() {
             try {
-                // Criar um som de sucesso simples
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator.frequency.value = 800;
-                oscillator.type = 'sine';
-                
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-                
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.1);
+                // Som de sucesso simples
+                const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ');
+                audio.play().catch(() => {});
             } catch (e) {
-                console.log("Áudio não suportado");
+                // Ignorar erros de áudio
             }
         }
 
@@ -436,6 +513,12 @@
                 html5QrCode.stop().then(() => {
                     html5QrCode.clear();
                 }).catch(() => {});
+            }
+            
+            // Parar qualquer stream de câmera
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
             }
         };
 
