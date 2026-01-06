@@ -6,8 +6,8 @@
     <title>Souza Farma - Controle de Validade (Produção)</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- QuaggaJS para código de barras (mais confiável que html5-qrcode) -->
-    <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+    <!-- Html5Qrcode mais recente -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <!-- Google Font - Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -20,54 +20,25 @@
         .modal-content { background-color: white; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); max-width: 90%; width: 500px; max-height: 90vh; overflow-y: auto; position: relative; }
         .logo-img { max-width: 100%; height: auto; margin: 0 auto 1.5rem; display: block; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         #scanner-modal .modal-content { max-width: 95%; width: 600px; }
-        /* Estilos para o Scanner Quagga */
-        .scanner-container { 
-            width: 100%; 
-            height: 400px; 
-            position: relative; 
-            overflow: hidden; 
-            border-radius: 8px; 
-            background: black; 
-            margin-bottom: 1rem;
-        }
-        #scanner-video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+        /* Scanner simples */
+        .scanner-container { width: 100%; height: 400px; position: relative; overflow: hidden; border-radius: 8px; background: #000; margin-bottom: 1rem; }
         .scanner-guide { 
             position: absolute; 
             top: 50%; 
             left: 50%; 
             transform: translate(-50%, -50%); 
-            width: 300px; 
-            height: 120px; 
+            width: 250px; 
+            height: 100px; 
             border: 3px solid #3B82F6; 
             border-radius: 8px; 
             z-index: 10; 
             pointer-events: none;
-            box-shadow: 0 0 0 10000px rgba(0, 0, 0, 0.5);
         }
-        .scanner-corner {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            border-color: #3B82F6;
-        }
-        .corner-tl { top: -3px; left: -3px; border-top: 4px solid; border-left: 4px solid; }
-        .corner-tr { top: -3px; right: -3px; border-top: 4px solid; border-right: 4px solid; }
-        .corner-bl { bottom: -3px; left: -3px; border-bottom: 4px solid; border-left: 4px solid; }
-        .corner-br { bottom: -3px; right: -3px; border-bottom: 4px solid; border-right: 4px solid; }
-        
-        #scanner-canvas {
-            display: none;
-        }
-        
         @media (max-width: 640px) { 
             .sm\:table-cell { display: none !important; } 
             #scanner-modal .modal-content { width: 95%; max-width: 95%; padding: 1rem; }
             .scanner-container { height: 300px; }
-            .scanner-guide { width: 250px; height: 100px; }
+            .scanner-guide { width: 200px; height: 80px; }
         }
         @media print { .no-print { display: none !important; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 10pt; } }
     </style>
@@ -200,7 +171,7 @@
         </div>
     </div>
 
-    <!-- Modal do Scanner com QuaggaJS -->
+    <!-- Modal do Scanner -->
     <div id="scanner-modal" class="modal-overlay hidden no-print">
         <div class="modal-content">
             <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl z-20" onclick="closeScannerModal()"> &times; </button>
@@ -208,14 +179,8 @@
             <p class="text-sm text-gray-600 mb-4">Posicione o código de barras dentro da área azul</p>
             
             <div class="scanner-container">
-                <div class="scanner-guide">
-                    <div class="scanner-corner corner-tl"></div>
-                    <div class="scanner-corner corner-tr"></div>
-                    <div class="scanner-corner corner-bl"></div>
-                    <div class="scanner-corner corner-br"></div>
-                </div>
-                <video id="scanner-video" playsinline></video>
-                <canvas id="scanner-canvas"></canvas>
+                <div class="scanner-guide"></div>
+                <div id="reader" class="w-full h-full"></div>
             </div>
             
             <div class="mt-4 text-center">
@@ -223,7 +188,12 @@
                     Fechar Scanner
                 </button>
             </div>
-            <p class="mt-4 text-center text-gray-600 text-sm" id="scanner-status">Aguardando leitura...</p>
+            <p class="mt-4 text-center text-gray-600 text-sm" id="scanner-status">Clique em iniciar para começar</p>
+            <div class="mt-4 text-center">
+                <button onclick="startScanner()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg">
+                    Iniciar Scanner
+                </button>
+            </div>
         </div>
     </div>
 
@@ -236,8 +206,9 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : "controle-de-validade-e708a";
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         let db, auth, userId = null, isFirebaseReady = false, allMedications = [], currentFilteredList = [];
-        let isScannerActive = false;
+        let html5QrCode = null;
         let currentScannerMode = 'BUSCA';
+        let isScanning = false;
 
         async function init() {
             try {
@@ -314,7 +285,7 @@
             return (y1 - y2) * 12 + (m1 - m2);
         }
 
-        // SCANNER COM QUAGGAS - ESPECIALMENTE PARA iPHONE
+        // FUNÇÃO SIMPLIFICADA PARA ABRIR MODAL
         window.openScannerModal = function(mode) {
             currentScannerMode = mode;
             
@@ -328,143 +299,147 @@
             const modal = document.getElementById('scanner-modal');
             modal.classList.remove('hidden');
             
-            updateScannerStatus("Iniciando scanner...");
+            // Limpa o scanner anterior se existir
+            if (html5QrCode) {
+                try {
+                    html5QrCode.stop();
+                    html5QrCode.clear();
+                } catch (e) {
+                    console.log("Scanner já limpo");
+                }
+            }
             
-            // Inicia o scanner após um pequeno delay para o modal aparecer
-            setTimeout(() => {
-                startQuaggaScanner();
-            }, 300);
+            // Cria novo scanner
+            html5QrCode = new Html5Qrcode("reader");
+            
+            updateScannerStatus("Pronto para iniciar");
         };
 
-        function startQuaggaScanner() {
-            if (isScannerActive) return;
+        // FUNÇÃO PARA INICIAR O SCANNER
+        window.startScanner = async function() {
+            if (isScanning) return;
             
-            isScannerActive = true;
+            const readerElement = document.getElementById('reader');
+            readerElement.innerHTML = '';
+            readerElement.style.width = '100%';
+            readerElement.style.height = '100%';
             
-            // Configuração do Quagga para códigos de barras
-            Quagga.init({
-                inputStream: {
-                    name: "Live",
-                    type: "LiveStream",
-                    target: document.querySelector('#scanner-video'),
-                    constraints: {
-                        facingMode: "environment", // Usa câmera traseira
-                        width: { min: 640 },
-                        height: { min: 480 },
-                        aspectRatio: { min: 1, max: 2 }
+            try {
+                updateScannerStatus("Iniciando câmera...");
+                
+                // Configuração MUITO SIMPLES que funciona em iOS
+                const config = {
+                    fps: 10,
+                    qrbox: { 
+                        width: 250,
+                        height: 100
                     },
-                    area: { // Define área de escaneamento
-                        top: "25%",
-                        right: "10%",
-                        left: "10%",
-                        bottom: "25%"
-                    }
-                },
-                decoder: {
-                    readers: [
-                        "code_128_reader",
-                        "ean_reader",
-                        "ean_8_reader",
-                        "code_39_reader",
-                        "code_39_vin_reader",
-                        "codabar_reader",
-                        "upc_reader",
-                        "upc_e_reader",
-                        "i2of5_reader"
-                    ],
-                    debug: {
-                        showCanvas: true,
-                        showPatches: true,
-                        showFoundPatches: true,
-                        showSkeleton: true,
-                        showLabels: true,
-                        showPatchLabels: true,
-                        showRemainingPatchLabels: true,
-                        boxFromPatches: {
-                            showTransformed: true,
-                            showTransformedBox: true,
-                            showBB: true
+                    aspectRatio: 1.0,
+                    disableFlip: false
+                };
+                
+                // Tenta iniciar com a câmera traseira
+                await html5QrCode.start(
+                    { facingMode: "environment" },
+                    config,
+                    onScanSuccess,
+                    onScanError
+                );
+                
+                isScanning = true;
+                updateScannerStatus("Scanner ativo - posicione o código");
+                
+            } catch (err) {
+                console.error("Erro ao iniciar scanner:", err);
+                
+                // Se environment falhar, tenta user (frontal)
+                try {
+                    updateScannerStatus("Tentando câmera frontal...");
+                    
+                    await html5QrCode.start(
+                        { facingMode: "user" },
+                        {
+                            fps: 10,
+                            qrbox: { width: 250, height: 100 },
+                            aspectRatio: 1.0
+                        },
+                        onScanSuccess,
+                        onScanError
+                    );
+                    
+                    isScanning = true;
+                    updateScannerStatus("Scanner ativo (frontal) - posicione o código");
+                    
+                } catch (secondErr) {
+                    console.error("Ambas as câmeras falharam:", secondErr);
+                    
+                    // Tenta método alternativo
+                    try {
+                        updateScannerStatus("Tentando método alternativo...");
+                        
+                        // Tenta sem facingMode, apenas primeira câmera
+                        const cameras = await Html5Qrcode.getCameras();
+                        if (cameras && cameras.length > 0) {
+                            await html5QrCode.start(
+                                cameras[0].id,
+                                {
+                                    fps: 10,
+                                    qrbox: 250
+                                },
+                                onScanSuccess,
+                                onScanError
+                            );
+                            
+                            isScanning = true;
+                            updateScannerStatus("Scanner ativo - posicione o código");
+                        } else {
+                            throw new Error("Nenhuma câmera encontrada");
                         }
+                    } catch (finalErr) {
+                        console.error("Todos os métodos falharam:", finalErr);
+                        updateScannerStatus("Erro: " + finalErr.message);
+                        showMessage("Não foi possível acessar a câmera. Verifique as permissões.", "error");
                     }
-                },
-                locate: true,
-                frequency: 10
-            }, function(err) {
-                if (err) {
-                    console.error("Erro ao iniciar Quagga:", err);
-                    updateScannerStatus("Erro: " + err.message);
-                    showMessage("Erro ao iniciar scanner: " + err.message, "error");
-                    closeScannerModal();
-                    return;
                 }
-                
-                updateScannerStatus("Scanner pronto - posicione o código");
-                
-                Quagga.start();
-                
-                // Detecta quando um código é lido
-                Quagga.onDetected(function(result) {
-                    if (result && result.codeResult && result.codeResult.code) {
-                        const code = result.codeResult.code;
-                        console.log("Código detectado:", code);
-                        
-                        // Feedback visual
-                        const guide = document.querySelector('.scanner-guide');
-                        if (guide) {
-                            guide.style.borderColor = '#10B981';
-                            guide.style.boxShadow = '0 0 20px #10B981';
-                        }
-                        
-                        // Para o scanner
-                        Quagga.stop();
-                        isScannerActive = false;
-                        
-                        // Processa o código após pequeno delay
-                        setTimeout(() => {
-                            processScannedCode(code);
-                        }, 500);
-                    }
+            }
+        };
+
+        function onScanSuccess(decodedText) {
+            console.log("Código lido:", decodedText);
+            
+            // Feedback visual
+            const guide = document.querySelector('.scanner-guide');
+            if (guide) {
+                guide.style.borderColor = '#10B981';
+                setTimeout(() => {
+                    guide.style.borderColor = '#3B82F6';
+                }, 500);
+            }
+            
+            // Para o scanner
+            if (html5QrCode && isScanning) {
+                html5QrCode.stop().then(() => {
+                    isScanning = false;
+                    html5QrCode.clear();
+                }).catch(() => {
+                    isScanning = false;
                 });
-                
-                // Monitora o processo
-                Quagga.onProcessed(function(result) {
-                    if (result) {
-                        const drawingCtx = Quagga.canvas.ctx.overlay;
-                        const drawingCanvas = Quagga.canvas.dom.overlay;
-                        
-                        if (result.boxes) {
-                            drawingCtx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute("width")), parseInt(drawingCanvas.getAttribute("height")));
-                            result.boxes.filter(function(box) {
-                                return box !== result.box;
-                            }).forEach(function(box) {
-                                Quagga.ImageDebug.drawPath(box, {x: 0, y: 1}, drawingCtx, {color: "green", lineWidth: 2});
-                            });
-                        }
-                        
-                        if (result.box) {
-                            Quagga.ImageDebug.drawPath(result.box, {x: 0, y: 1}, drawingCtx, {color: "#00F", lineWidth: 2});
-                        }
-                        
-                        if (result.codeResult && result.codeResult.code) {
-                            Quagga.ImageDebug.drawPath(result.line, {x: 'x', y: 'y'}, drawingCtx, {color: 'red', lineWidth: 3});
-                        }
-                    }
-                });
-            });
+            }
+            
+            // Fecha modal e processa código
+            closeScannerModal();
+            processScannedCode(decodedText);
+        }
+
+        function onScanError(errorMessage) {
+            // Ignora erros comuns
+            if (!errorMessage.includes("NotFoundException") && 
+                !errorMessage.includes("NotAllowedError")) {
+                console.log("Erro de scan:", errorMessage);
+            }
         }
 
         function processScannedCode(code) {
-            // Restaura cor original do guia
-            const guide = document.querySelector('.scanner-guide');
-            if (guide) {
-                guide.style.borderColor = '#3B82F6';
-                guide.style.boxShadow = '0 0 0 10000px rgba(0, 0, 0, 0.5)';
-            }
-            
-            // Fecha o modal
-            closeScannerModal();
-            
-            // Processa de acordo com o modo
             if(currentScannerMode === 'BUSCA') {
                 document.getElementById('search-input').value = code;
                 applyFilters();
@@ -487,26 +462,23 @@
 
         window.closeScannerModal = function() {
             // Para o scanner se estiver ativo
-            if (isScannerActive && typeof Quagga !== 'undefined') {
+            if (html5QrCode && isScanning) {
                 try {
-                    Quagga.stop();
-                    isScannerActive = false;
+                    html5QrCode.stop().then(() => {
+                        html5QrCode.clear();
+                        isScanning = false;
+                    }).catch(() => {
+                        isScanning = false;
+                    });
                 } catch (e) {
-                    console.log("Scanner já parado");
+                    console.log("Erro ao parar scanner:", e);
+                    isScanning = false;
                 }
             }
             
             // Fecha o modal
             const modal = document.getElementById('scanner-modal');
             modal.classList.add('hidden');
-            
-            // Limpa o vídeo
-            const video = document.getElementById('scanner-video');
-            if (video && video.srcObject) {
-                const tracks = video.srcObject.getTracks();
-                tracks.forEach(track => track.stop());
-                video.srcObject = null;
-            }
         };
 
         window.stopScanner = function() {
