@@ -198,7 +198,7 @@
             
             <div class="mt-4 flex flex-wrap gap-2 justify-center">
                 <button onclick="toggleCamera()" id="toggle-camera-btn" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm">
-                    Alternar Câmera
+                    Alternar para Câmera Frontal
                 </button>
                 <button onclick="stopScanner()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm">
                     Parar Scanner
@@ -217,7 +217,7 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : "controle-de-validade-e708a";
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         let db, auth, userId = null, isFirebaseReady = false, allMedications = [], currentFilteredList = [], html5QrCode = null;
-        let isRearCamera = true;
+        let isRearCamera = true; // SEMPRE INICIA COM TRASEIRA
         let currentCameraId = null;
 
         async function init() {
@@ -295,7 +295,7 @@
             return (y1 - y2) * 12 + (m1 - m2);
         }
 
-        // SCANNER OTIMIZADO PARA CELULAR
+        // SCANNER OTIMIZADO - SEMPRE INICIA NA CÂMERA TRASEIRA
         window.openScannerModal = async function(mode) {
             window.scannerMode = mode;
             
@@ -330,57 +330,92 @@
                     disableFlip: false
                 };
 
-                // Formato de códigos de barras suportados
-                const formats = [
-                    Html5QrcodeSupportedFormats.CODE_128,
-                    Html5QrcodeSupportedFormats.EAN_13,
-                    Html5QrcodeSupportedFormats.EAN_8,
-                    Html5QrcodeSupportedFormats.UPC_A,
-                    Html5QrcodeSupportedFormats.UPC_E,
-                    Html5QrcodeSupportedFormats.CODE_39,
-                    Html5QrcodeSupportedFormats.CODE_93,
-                    Html5QrcodeSupportedFormats.CODABAR,
-                    Html5QrcodeSupportedFormats.ITF,
-                    Html5QrcodeSupportedFormats.RSS_14,
-                    Html5QrcodeSupportedFormats.RSS_EXPANDED
-                ];
-
                 // Tenta obter a lista de câmeras
                 const cameras = await Html5Qrcode.getCameras();
                 
                 if (cameras && cameras.length > 0) {
-                    // Encontra a câmera traseira (environment) ou usa a primeira disponível
-                    const rearCamera = cameras.find(cam => cam.label.toLowerCase().includes('back') || cam.label.toLowerCase().includes('rear') || cam.label.toLowerCase().includes('environment'));
-                    const frontCamera = cameras.find(cam => cam.label.toLowerCase().includes('front') || cam.label.toLowerCase().includes('user'));
+                    // FUNÇÃO MELHORADA PARA DETECTAR CÂMERA TRASEIRA
+                    const findRearCamera = (cameras) => {
+                        // Prioridade 1: Câmeras com "environment" no label
+                        let rearCam = cameras.find(cam => 
+                            cam.label.toLowerCase().includes('environment') ||
+                            cam.label.toLowerCase().includes('traseira') ||
+                            cam.label.toLowerCase().includes('trás') ||
+                            cam.label.toLowerCase().includes('back') ||
+                            cam.label.toLowerCase().includes('rear') ||
+                            cam.label.toLowerCase().includes('world') ||
+                            cam.label.toLowerCase().includes('trasera')
+                        );
+                        
+                        // Prioridade 2: Se não encontrou, procura por câmeras que não são frontais
+                        if (!rearCam) {
+                            rearCam = cameras.find(cam => 
+                                !cam.label.toLowerCase().includes('front') &&
+                                !cam.label.toLowerCase().includes('user') &&
+                                !cam.label.toLowerCase().includes('selfie') &&
+                                !cam.label.toLowerCase().includes('frontal')
+                            );
+                        }
+                        
+                        // Prioridade 3: Usa facingMode se ainda não encontrou
+                        return rearCam;
+                    };
                     
-                    // Usa câmera traseira se disponível, senão frontal, senão primeira disponível
-                    const cameraId = isRearCamera && rearCamera ? rearCamera.id : 
-                                     !isRearCamera && frontCamera ? frontCamera.id : 
-                                     cameras[0].id;
+                    // FUNÇÃO PARA DETECTAR CÂMERA FRONTAL
+                    const findFrontCamera = (cameras) => {
+                        return cameras.find(cam => 
+                            cam.label.toLowerCase().includes('front') ||
+                            cam.label.toLowerCase().includes('user') ||
+                            cam.label.toLowerCase().includes('selfie') ||
+                            cam.label.toLowerCase().includes('frontal')
+                        );
+                    };
                     
-                    currentCameraId = cameraId;
+                    // Encontra as câmeras
+                    const rearCamera = findRearCamera(cameras);
+                    const frontCamera = findFrontCamera(cameras);
                     
-                    // Inicia o scanner
-                    await html5QrCode.start(
-                        cameraId,
-                        config,
-                        onScanSuccess,
-                        onScanError
-                    ).catch(async (err) => {
-                        console.log("Tentando com configuração alternativa...");
-                        // Tenta com facingMode se houver erro com cameraId
+                    // DECISÃO: SEMPRE TENTA USAR A TRASEIRA PRIMEIRO
+                    let cameraToUse = null;
+                    let facingModeToUse = null;
+                    
+                    if (isRearCamera && rearCamera) {
+                        // Usa câmera traseira específica
+                        cameraToUse = rearCamera.id;
+                        console.log("Usando câmera traseira específica:", rearCamera.label);
+                    } else if (!isRearCamera && frontCamera) {
+                        // Usa câmera frontal
+                        cameraToUse = frontCamera.id;
+                        console.log("Usando câmera frontal específica:", frontCamera.label);
+                    }
+                    
+                    // Se encontrou uma câmera específica
+                    if (cameraToUse) {
+                        currentCameraId = cameraToUse;
+                        
+                        // Inicia o scanner com a câmera específica
                         await html5QrCode.start(
-                            { facingMode: isRearCamera ? "environment" : "user" },
-                            { 
-                                fps: 10,
-                                qrbox: { width: 250, height: 100 }
-                            },
+                            cameraToUse,
+                            config,
                             onScanSuccess,
                             onScanError
-                        );
-                    });
+                        ).catch(async (err) => {
+                            console.log("Erro com câmera específica, tentando facingMode:", err);
+                            // Fallback para facingMode
+                            facingModeToUse = isRearCamera ? "environment" : "user";
+                            await startWithFacingMode(facingModeToUse, config);
+                        });
+                    } else {
+                        // Se não encontrou câmera específica, usa facingMode
+                        console.log("Usando facingMode como fallback");
+                        facingModeToUse = isRearCamera ? "environment" : "user";
+                        await startWithFacingMode(facingModeToUse, config);
+                    }
                     
-                    showMessage("Scanner iniciado. Posicione o código de barras na área de foco.", "info");
+                    // Atualiza o texto do botão
+                    updateToggleButtonText();
+                    showMessage("Scanner iniciado na câmera " + (isRearCamera ? "traseira" : "frontal"), "info");
+                    
                 } else {
                     throw new Error("Nenhuma câmera encontrada.");
                 }
@@ -391,6 +426,32 @@
                 closeScannerModal();
             }
         };
+
+        // Função auxiliar para iniciar com facingMode
+        async function startWithFacingMode(facingMode, config) {
+            try {
+                await html5QrCode.start(
+                    { facingMode: facingMode },
+                    config,
+                    onScanSuccess,
+                    onScanError
+                );
+            } catch (facingModeErr) {
+                console.log("Erro com facingMode, tentando qualquer câmera:", facingModeErr);
+                // Último recurso: tenta qualquer câmera
+                const cameras = await Html5Qrcode.getCameras();
+                if (cameras && cameras.length > 0) {
+                    await html5Qrcode.start(
+                        cameras[0].id,
+                        config,
+                        onScanSuccess,
+                        onScanError
+                    );
+                } else {
+                    throw facingModeErr;
+                }
+            }
+        }
 
         function onScanSuccess(decodedText) {
             // Adiciona pequeno atraso para feedback visual
@@ -438,19 +499,29 @@
             if (html5QrCode && html5QrCode.isScanning) {
                 try {
                     await html5QrCode.stop();
+                    // Alterna entre traseira e frontal
                     isRearCamera = !isRearCamera;
                     
-                    // Reabre o scanner com a câmera alternativa
+                    // Reabre o scanner com a nova câmera
                     window.scannerMode = window.scannerMode || 'BUSCA';
                     await openScannerModal(window.scannerMode);
                     
-                    showMessage(`Câmera alterada para ${isRearCamera ? 'traseira' : 'frontal'}`, "info");
                 } catch (err) {
                     console.error("Erro ao alternar câmera:", err);
                     showMessage("Erro ao alternar câmera", "error");
                 }
             }
         };
+
+        // Atualiza o texto do botão de alternar câmera
+        function updateToggleButtonText() {
+            const toggleBtn = document.getElementById('toggle-camera-btn');
+            if (toggleBtn) {
+                toggleBtn.textContent = isRearCamera ? 
+                    "Alternar para Câmera Frontal" : 
+                    "Alternar para Câmera Traseira";
+            }
+        }
 
         window.stopScanner = function() {
             closeScannerModal();
