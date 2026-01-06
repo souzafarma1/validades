@@ -6,8 +6,8 @@
     <title>Souza Farma - Controle de Validade (Produção)</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- ZXing Browser - MUITO melhor para iPhone -->
-    <script src="https://unpkg.com/@zxing/browser@0.1.1"></script>
+    <!-- Barcode Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <!-- Google Font - Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -20,32 +20,24 @@
         .modal-content { background-color: white; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); max-width: 90%; width: 500px; max-height: 90vh; overflow-y: auto; position: relative; }
         .logo-img { max-width: 100%; height: auto; margin: 0 auto 1.5rem; display: block; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         #scanner-modal .modal-content { max-width: 95%; width: 600px; }
-        /* Scanner com ZXing */
-        .scanner-container { width: 100%; height: 400px; position: relative; overflow: hidden; border-radius: 8px; background: #000; margin-bottom: 1rem; }
-        #scanner-video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .scanner-guide { 
-            position: absolute; 
-            top: 50%; 
-            left: 50%; 
-            transform: translate(-50%, -50%); 
-            width: 280px; 
-            height: 120px; 
-            border: 3px solid #3B82F6; 
-            border-radius: 8px; 
-            z-index: 10; 
-            pointer-events: none;
-        }
-        @media (max-width: 640px) { 
-            .sm\:table-cell { display: none !important; } 
-            #scanner-modal .modal-content { width: 95%; max-width: 95%; padding: 1rem; }
-            .scanner-container { height: 300px; }
-            .scanner-guide { width: 220px; height: 100px; }
-        }
+        @media (max-width: 640px) { .sm\:table-cell { display: none !important; } }
         @media print { .no-print { display: none !important; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 10pt; } }
+        
+        /* Estilos aprimorados para o scanner */
+        #reader { width: 100% !important; height: 400px !important; position: relative; }
+        #reader video { width: 100% !important; height: 100% !important; object-fit: cover; border-radius: 8px; }
+        #reader canvas { display: none; }
+        .html5-qrcode-element { display: none; }
+        .scanner-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; height: 30%; border: 4px solid rgba(59, 130, 246, 0.7); border-radius: 8px; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5); pointer-events: none; z-index: 1; }
+        .scanner-line { position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.8), transparent); animation: scan 2s linear infinite; }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+        .scanner-instructions { margin-top: 1rem; padding: 0.75rem; background: #f0f9ff; border-radius: 0.5rem; border-left: 4px solid #3b82f6; font-size: 0.875rem; color: #1e40af; }
+        .scanner-buttons { display: flex; gap: 0.5rem; margin-top: 1rem; }
+        .scanner-buttons button { flex: 1; padding: 0.5rem; border-radius: 0.375rem; font-weight: 600; }
+        .torch-btn { background: #374151; color: white; }
+        .torch-btn.active { background: #f59e0b; }
+        .flip-btn { background: #6366f1; color: white; }
+        .flip-btn.active { background: #8b5cf6; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -176,26 +168,45 @@
         </div>
     </div>
 
-    <!-- Modal do Scanner com ZXing -->
+    <!-- Modal do Scanner Aprimorado -->
     <div id="scanner-modal" class="modal-overlay hidden no-print">
         <div class="modal-content">
-            <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl z-20" onclick="closeScannerModal()"> &times; </button>
+            <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl z-10" onclick="closeScannerModal()"> &times; </button>
             <h2 class="text-xl font-semibold mb-4 text-blue-700">Scanner de Código de Barras</h2>
-            <p class="text-sm text-gray-600 mb-4" id="scanner-status">Posicione o código de barras dentro da área azul</p>
             
-            <div class="scanner-container">
-                <div class="scanner-guide"></div>
-                <video id="scanner-video" playsinline></video>
+            <div class="relative">
+                <div id="reader"></div>
+                <div class="scanner-frame">
+                    <div class="scanner-line"></div>
+                </div>
             </div>
             
-            <div class="mt-4 text-center">
-                <button onclick="toggleCamera()" id="toggle-camera-btn" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg mr-2">
-                    Alternar Câmera
+            <div class="scanner-instructions">
+                <p class="font-semibold mb-1">Dicas para melhor leitura:</p>
+                <ul class="list-disc pl-4 space-y-1">
+                    <li>Posicione o código dentro do retângulo azul</li>
+                    <li>Mantenha uma distância de 15-30 cm</li>
+                    <li>Garanta boa iluminação no ambiente</li>
+                    <li>Evite reflexos e sombras no código</li>
+                </ul>
+            </div>
+            
+            <div class="scanner-buttons">
+                <button id="torch-btn" class="torch-btn" onclick="toggleTorch()">
+                    <span class="flex items-center justify-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1"/><path d="M6 7h4l2-5h4l2 5h4v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2-5h4l2 5Z"/><path d="M9 17v3"/></svg>
+                        Lanterna
+                    </span>
                 </button>
-                <button onclick="stopScanner()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg">
-                    Parar Scanner
+                <button id="flip-btn" class="flip-btn" onclick="flipCamera()">
+                    <span class="flex items-center justify-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M15 20H9"/><path d="M12 14v-4"/><path d="M9 10H5"/><path d="M19 10h-4"/><path d="M12 22a10 10 0 1 1 0-20 10 10 0 0 1 0 20Z"/></svg>
+                        Virar Câmera
+                    </span>
                 </button>
             </div>
+            
+            <p class="mt-4 text-center text-gray-600 text-sm">A leitura é automática quando o código é detectado.</p>
         </div>
     </div>
 
@@ -207,11 +218,9 @@
         const APP_CONFIG = { apiKey: "AIzaSyDc9-jix-tXCV8JHzivDR8pY1iCNNJeDPg", authDomain: "controle-de-validade-e708a.firebaseapp.com", projectId: "controle-de-validade-e708a", storageBucket: "controle-de-validade-e708a.firebasestorage.app", messagingSenderId: "300173058270", appId: "1:300173058270:web:970549624a4c46af3d624f" };
         const appId = typeof __app_id !== 'undefined' ? __app_id : "controle-de-validade-e708a";
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        let db, auth, userId = null, isFirebaseReady = false, allMedications = [], currentFilteredList = [];
-        let currentScannerMode = 'BUSCA';
-        let codeReader = null;
-        let videoStream = null;
-        let isRearCamera = true;
+        let db, auth, userId = null, isFirebaseReady = false, allMedications = [], currentFilteredList = [], html5QrCode = null;
+        let isTorchOn = false;
+        let isBackCamera = true;
 
         async function init() {
             try {
@@ -288,193 +297,148 @@
             return (y1 - y2) * 12 + (m1 - m2);
         }
 
-        // SCANNER COM ZXING - FUNCIONA NO IPHONE
-        window.openScannerModal = async function(mode) {
-            currentScannerMode = mode;
-            
-            // Limpa filtro se for busca
+        window.openScannerModal = function(mode) {
+            window.scannerMode = mode;
             if(mode === 'BUSCA') {
                 document.getElementById('search-input').value = '';
                 applyFilters();
             }
             
-            // Mostra o modal
-            const modal = document.getElementById('scanner-modal');
-            modal.classList.remove('hidden');
+            // Resetar estados
+            isTorchOn = false;
+            isBackCamera = true;
+            document.getElementById('torch-btn').classList.remove('active');
+            document.getElementById('flip-btn').classList.remove('active');
             
-            // Inicia o scanner após um pequeno delay
-            setTimeout(() => {
-                startZXingScanner();
-            }, 300);
-        };
+            document.getElementById('scanner-modal').classList.remove('hidden');
+            
+            // Configurações otimizadas para iPhones
+            const config = {
+                fps: 25, // Aumentado para melhor fluidez
+                qrbox: { 
+                    width: 280, 
+                    height: 100 // Área de leitura maior
+                },
+                aspectRatio: 1.0, // Melhor para iPhones
+                disableFlip: false,
+                formatsToSupport: [
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.UPC_A,
+                    Html5QrcodeSupportedFormats.UPC_E
+                ]
+            };
 
-        async function startZXingScanner() {
-            try {
-                updateScannerStatus("Iniciando scanner...");
-                
-                // Inicializa o leitor ZXing
-                const hints = new Map();
-                hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
-                    ZXing.BarcodeFormat.CODE_128,
-                    ZXing.BarcodeFormat.EAN_13,
-                    ZXing.BarcodeFormat.EAN_8,
-                    ZXing.BarcodeFormat.UPC_A,
-                    ZXing.BarcodeFormat.UPC_E,
-                    ZXing.BarcodeFormat.CODE_39,
-                    ZXing.BarcodeFormat.CODABAR,
-                    ZXing.BarcodeFormat.ITF
-                ]);
-                
-                codeReader = new ZXing.BrowserMultiFormatReader();
-                codeReader.hints = hints;
-                
-                // Obtém lista de câmeras
-                const videoInputDevices = await ZXing.BrowserMultiFormatReader.listVideoInputDevices();
-                
-                let selectedDeviceId;
-                
-                if (videoInputDevices.length > 0) {
-                    // Encontra câmera traseira
-                    const rearCamera = videoInputDevices.find(device => 
-                        device.label.toLowerCase().includes('back') || 
-                        device.label.toLowerCase().includes('rear') ||
-                        device.label.toLowerCase().includes('environment') ||
-                        device.label.toLowerCase().includes('traseira')
-                    );
+            // Tentar usar a câmera traseira primeiro
+            const cameraConfig = {
+                facingMode: isBackCamera ? "environment" : "user",
+                width: { ideal: 1920 },
+                height: { ideal: 1080 }
+            };
+
+            html5QrCode = new Html5Qrcode("reader");
+            
+            html5QrCode.start(
+                cameraConfig, 
+                config, 
+                (text) => {
+                    // Sucesso na leitura
+                    closeScannerModal();
+                    playSuccessSound();
                     
-                    // Encontra câmera frontal
-                    const frontCamera = videoInputDevices.find(device => 
-                        device.label.toLowerCase().includes('front') || 
-                        device.label.toLowerCase().includes('user') ||
-                        device.label.toLowerCase().includes('selfie') ||
-                        device.label.toLowerCase().includes('frontal')
-                    );
-                    
-                    // Escolhe a câmera com base na preferência
-                    if (isRearCamera && rearCamera) {
-                        selectedDeviceId = rearCamera.deviceId;
-                        updateScannerStatus("Usando câmera traseira");
-                    } else if (!isRearCamera && frontCamera) {
-                        selectedDeviceId = frontCamera.deviceId;
-                        updateScannerStatus("Usando câmera frontal");
+                    if(window.scannerMode === 'BUSCA') {
+                        document.getElementById('search-input').value = text;
+                        applyFilters();
+                        showMessage("Código lido com sucesso!", "success");
                     } else {
-                        // Usa primeira câmera disponível
-                        selectedDeviceId = videoInputDevices[0].deviceId;
-                        updateScannerStatus("Usando câmera disponível");
+                        quickLookup(text);
+                        showMessage("Código lido com sucesso!", "success");
                     }
+                }, 
+                (errorMessage) => {
+                    // Ignorar mensagens de erro durante a leitura normal
+                    console.log("Scanning:", errorMessage);
                 }
-                
-                // Configura o elemento de vídeo
-                const videoElement = document.getElementById('scanner-video');
-                
-                // Decode from camera
-                codeReader.decodeFromVideoDevice(
-                    selectedDeviceId, 
-                    videoElement, 
-                    (result, err) => {
-                        if (result) {
-                            // Código detectado!
-                            handleScannedCode(result.text);
-                        }
-                        
-                        if (err && !(err instanceof ZXing.NotFoundException)) {
-                            console.log("Erro de scan:", err);
-                        }
-                    }
-                );
-                
-                // Guarda a stream para poder parar depois
-                videoStream = videoElement.srcObject;
-                
-                updateScannerStatus("Scanner ativo - aponte para o código");
-                
-            } catch (err) {
+            ).catch(err => {
                 console.error("Erro ao iniciar scanner:", err);
-                updateScannerStatus("Erro: " + err.message);
-                showMessage("Erro ao iniciar scanner. Tente novamente.", "error");
-                closeScannerModal();
-            }
-        }
+                showMessage("Erro ao acessar a câmera. Verifique as permissões.", "error");
+            });
+        };
 
-        function handleScannedCode(code) {
-            console.log("Código detectado:", code);
+        window.toggleTorch = async function() {
+            if (!html5QrCode || !html5QrCode.getRunningTrackCapabilities) return;
             
-            // Feedback visual
-            const guide = document.querySelector('.scanner-guide');
-            if (guide) {
-                const originalColor = guide.style.borderColor;
-                guide.style.borderColor = '#10B981';
-                guide.style.boxShadow = '0 0 20px #10B981';
+            try {
+                const videoTrack = html5QrCode.getRunningTrack();
+                if (videoTrack && videoTrack.getCapabilities && videoTrack.getCapabilities().torch) {
+                    await videoTrack.applyConstraints({
+                        advanced: [{ torch: !isTorchOn }]
+                    });
+                    isTorchOn = !isTorchOn;
+                    const torchBtn = document.getElementById('torch-btn');
+                    torchBtn.classList.toggle('active', isTorchOn);
+                    torchBtn.innerHTML = isTorchOn ? 
+                        '<span class="flex items-center justify-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1"/><path d="M6 7h4l2-5h4l2 5h4v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2-5h4l2 5Z"/><path d="M9 17v3"/></svg> Lanterna ON</span>' :
+                        '<span class="flex items-center justify-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1"/><path d="M6 7h4l2-5h4l2 5h4v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2-5h4l2 5Z"/><path d="M9 17v3"/></svg> Lanterna</span>';
+                }
+            } catch (error) {
+                console.log("Lanterna não suportada neste dispositivo");
+            }
+        };
+
+        window.flipCamera = function() {
+            if (!html5QrCode) return;
+            
+            isBackCamera = !isBackCamera;
+            const flipBtn = document.getElementById('flip-btn');
+            flipBtn.classList.toggle('active', !isBackCamera);
+            
+            // Fechar e reabrir o scanner com a câmera oposta
+            html5QrCode.stop().then(() => {
+                const currentMode = window.scannerMode;
+                setTimeout(() => openScannerModal(currentMode), 500);
+            }).catch(() => {
+                const currentMode = window.scannerMode;
+                openScannerModal(currentMode);
+            });
+        };
+
+        function playSuccessSound() {
+            try {
+                // Criar um som de sucesso simples
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
                 
-                setTimeout(() => {
-                    guide.style.borderColor = '#3B82F6';
-                    guide.style.boxShadow = 'none';
-                }, 500);
-            }
-            
-            // Para o scanner
-            stopScanner();
-            
-            // Fecha modal e processa código
-            closeScannerModal();
-            processScannedCode(code);
-        }
-
-        function processScannedCode(code) {
-            if(currentScannerMode === 'BUSCA') {
-                document.getElementById('search-input').value = code;
-                applyFilters();
-                showMessage(`Código escaneado: ${code}`, "success");
-            } else {
-                document.getElementById('quick-search-input').value = code;
-                showMessage(`Código escaneado: ${code}`, "success");
-                if (typeof quickLookup === 'function') {
-                    quickLookup(code);
-                }
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.1);
+            } catch (e) {
+                console.log("Áudio não suportado");
             }
         }
-
-        function updateScannerStatus(message) {
-            const statusElement = document.getElementById('scanner-status');
-            if (statusElement) {
-                statusElement.textContent = message;
-            }
-        }
-
-        window.toggleCamera = function() {
-            isRearCamera = !isRearCamera;
-            stopScanner();
-            startZXingScanner();
-        };
-
-        window.stopScanner = function() {
-            if (codeReader) {
-                try {
-                    codeReader.reset();
-                    codeReader = null;
-                } catch (e) {
-                    console.log("Erro ao parar scanner:", e);
-                }
-            }
-            
-            // Para a stream de vídeo
-            if (videoStream) {
-                videoStream.getTracks().forEach(track => track.stop());
-                videoStream = null;
-            }
-            
-            const videoElement = document.getElementById('scanner-video');
-            if (videoElement) {
-                videoElement.srcObject = null;
-            }
-        };
 
         window.closeScannerModal = function() {
-            stopScanner();
-            document.getElementById('scanner-modal').classList.add('hidden');
+            const modal = document.getElementById('scanner-modal');
+            if (modal) modal.classList.add('hidden');
+            
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    html5QrCode.clear();
+                }).catch(() => {});
+            }
         };
 
-        // CRUD WRAPPERS
         window.openCadastroModal = () => document.getElementById('medication-modal').classList.remove('hidden');
         window.closeModal = () => { document.getElementById('medication-modal').classList.add('hidden'); resetForm(); };
         
@@ -485,22 +449,6 @@
             }
         };
 
-        // Função para mostrar mensagens
-        function showMessage(text, type = "info") {
-            const container = document.getElementById('message-container');
-            const message = document.createElement('div');
-            message.className = `message-box ${type === 'error' ? 'bg-red-100 text-red-800 border border-red-200' : 
-                                 type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 
-                                 'bg-blue-100 text-blue-800 border border-blue-200'}`;
-            message.textContent = text;
-            container.appendChild(message);
-            
-            setTimeout(() => {
-                message.style.opacity = '0';
-                setTimeout(() => container.removeChild(message), 300);
-            }, 3000);
-        }
-
         window.exportToCsv = () => {
             let csv = "Cód. Barras;Cód. Interno;Descrição;Laboratório;Validade;Qtd\n";
             currentFilteredList.forEach(m => csv += `${m.barcode};${m.internalCode};${m.description};${m.laboratory};${m.expirationDate};${m.quantity}\n`);
@@ -509,83 +457,31 @@
             link.href = URL.createObjectURL(blob);
             link.download = 'relatorio_souzafarma.csv';
             link.click();
-            showMessage("Relatório exportado para CSV", "success");
         };
 
-        window.printFilteredList = () => {
-            window.print();
-        };
-
-        // Funções auxiliares
-        window.quickLookup = function(code) {
-            showMessage(`Buscando código: ${code}`, "info");
-            document.getElementById('search-input').value = code;
-            applyFilters();
-        };
-
-        window.resetForm = function() {
-            document.getElementById('medication-form').reset();
-            document.getElementById('doc-id').value = '';
-            document.getElementById('form-title').textContent = 'Cadastrar Novo Produto';
-            document.getElementById('submit-button').textContent = 'Salvar';
-        };
-
-        window.loadForEdit = async function(id) {
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    document.getElementById('doc-id').value = id;
-                    document.getElementById('barcode').value = data.barcode || '';
-                    document.getElementById('internalCode').value = data.internalCode || '';
-                    document.getElementById('description').value = data.description || '';
-                    document.getElementById('laboratory').value = data.laboratory || '';
-                    document.getElementById('quantity').value = data.quantity || 0;
-                    document.getElementById('expirationDate').value = data.expirationDate || '';
-                    document.getElementById('form-title').textContent = 'Editar Produto';
-                    document.getElementById('submit-button').textContent = 'Atualizar';
-                    openCadastroModal();
-                }
-            } catch (error) {
-                console.error("Erro ao carregar para edição:", error);
-                showMessage("Erro ao carregar dados", "error");
-            }
-        };
-
-        // Manipulador do formulário
-        document.getElementById('medication-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // Função auxiliar para mostrar mensagens
+        function showMessage(message, type = "info") {
+            const container = document.getElementById('message-container');
+            const messageDiv = document.createElement('div');
+            const bgColor = type === "success" ? "bg-green-100 border-green-400 text-green-700" :
+                          type === "error" ? "bg-red-100 border-red-400 text-red-700" :
+                          "bg-blue-100 border-blue-400 text-blue-700";
             
-            const formData = {
-                barcode: document.getElementById('barcode').value,
-                internalCode: document.getElementById('internalCode').value,
-                description: document.getElementById('description').value,
-                laboratory: document.getElementById('laboratory').value,
-                quantity: parseInt(document.getElementById('quantity').value) || 0,
-                expirationDate: document.getElementById('expirationDate').value,
-                createdAt: new Date().toISOString()
-            };
+            messageDiv.className = `${bgColor} border px-4 py-3 rounded-lg shadow-lg max-w-sm`;
+            messageDiv.innerHTML = `
+                <div class="flex items-center">
+                    <span class="mr-2">${type === "success" ? "✅" : type === "error" ? "❌" : "ℹ️"}</span>
+                    <span>${message}</span>
+                </div>
+            `;
             
-            const docId = document.getElementById('doc-id').value;
+            container.appendChild(messageDiv);
             
-            try {
-                if (docId) {
-                    // Atualizar
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', docId), formData);
-                    showMessage("Produto atualizado com sucesso!", "success");
-                } else {
-                    // Criar novo
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), formData);
-                    showMessage("Produto cadastrado com sucesso!", "success");
-                }
-                
-                closeModal();
-            } catch (error) {
-                console.error("Erro ao salvar:", error);
-                showMessage("Erro ao salvar: " + error.message, "error");
-            }
-        });
+            setTimeout(() => {
+                messageDiv.style.opacity = '0';
+                setTimeout(() => messageDiv.remove(), 300);
+            }, 3000);
+        }
 
         init();
     </script>
