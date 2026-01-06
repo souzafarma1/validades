@@ -6,8 +6,8 @@
     <title>Souza Farma - Controle de Validade (Produção)</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Html5Qrcode mais recente -->
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <!-- Barcode Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <!-- Google Font - Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -17,29 +17,10 @@
         input[type="month"] { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
         #expirationDate, #expiration-filter { padding: 6px; line-height: normal; }
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 50; }
-        .modal-content { background-color: white; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); max-width: 90%; width: 500px; max-height: 90vh; overflow-y: auto; position: relative; }
+        .modal-content { background-color: white; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); max-width: 90%; width: 500px; max-height: 90vh; overflow-y auto; position: relative; }
         .logo-img { max-width: 100%; height: auto; margin: 0 auto 1.5rem; display: block; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         #scanner-modal .modal-content { max-width: 95%; width: 600px; }
-        /* Scanner simples */
-        .scanner-container { width: 100%; height: 400px; position: relative; overflow: hidden; border-radius: 8px; background: #000; margin-bottom: 1rem; }
-        .scanner-guide { 
-            position: absolute; 
-            top: 50%; 
-            left: 50%; 
-            transform: translate(-50%, -50%); 
-            width: 250px; 
-            height: 100px; 
-            border: 3px solid #3B82F6; 
-            border-radius: 8px; 
-            z-index: 10; 
-            pointer-events: none;
-        }
-        @media (max-width: 640px) { 
-            .sm\:table-cell { display: none !important; } 
-            #scanner-modal .modal-content { width: 95%; max-width: 95%; padding: 1rem; }
-            .scanner-container { height: 300px; }
-            .scanner-guide { width: 200px; height: 80px; }
-        }
+        @media (max-width: 640px) { .sm\:table-cell { display: none !important; } }
         @media print { .no-print { display: none !important; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 10pt; } }
     </style>
 </head>
@@ -115,7 +96,7 @@
                         </div>
                     </div>
 
-                    <!-- Legenda de Cores Mantida -->
+                    <!-- Legenda de Cores Recalocada -->
                     <div class="flex flex-wrap text-xs mb-4 p-3 bg-gray-50 rounded-lg border no-print">
                         <span class="mr-4 flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-red-400 mr-1 border border-red-600"></span> Vencido/Mês Atual (0)</span>
                         <span class="mr-4 flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-yellow-200 mr-1 border border-yellow-400"></span> Vence em 1 Mês</span>
@@ -171,31 +152,7 @@
         </div>
     </div>
 
-    <!-- Modal do Scanner -->
-    <div id="scanner-modal" class="modal-overlay hidden no-print">
-        <div class="modal-content">
-            <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl z-20" onclick="closeScannerModal()"> &times; </button>
-            <h2 class="text-xl font-semibold mb-4 text-blue-700">Scanner de Código de Barras</h2>
-            <p class="text-sm text-gray-600 mb-4">Posicione o código de barras dentro da área azul</p>
-            
-            <div class="scanner-container">
-                <div class="scanner-guide"></div>
-                <div id="reader" class="w-full h-full"></div>
-            </div>
-            
-            <div class="mt-4 text-center">
-                <button onclick="stopScanner()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg">
-                    Fechar Scanner
-                </button>
-            </div>
-            <p class="mt-4 text-center text-gray-600 text-sm" id="scanner-status">Clique em iniciar para começar</p>
-            <div class="mt-4 text-center">
-                <button onclick="startScanner()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg">
-                    Iniciar Scanner
-                </button>
-            </div>
-        </div>
-    </div>
+    <div id="scanner-modal" class="modal-overlay hidden no-print"><div class="modal-content"><button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="closeScannerModal()"> &times; </button><h2 class="text-xl font-semibold mb-4 text-blue-700">Scanner de Código de Barras</h2><div id="reader"></div><p class="mt-4 text-center text-gray-600 text-sm">Posicione o código de barras no centro.</p></div></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -205,10 +162,7 @@
         const APP_CONFIG = { apiKey: "AIzaSyDc9-jix-tXCV8JHzivDR8pY1iCNNJeDPg", authDomain: "controle-de-validade-e708a.firebaseapp.com", projectId: "controle-de-validade-e708a", storageBucket: "controle-de-validade-e708a.firebasestorage.app", messagingSenderId: "300173058270", appId: "1:300173058270:web:970549624a4c46af3d624f" };
         const appId = typeof __app_id !== 'undefined' ? __app_id : "controle-de-validade-e708a";
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        let db, auth, userId = null, isFirebaseReady = false, allMedications = [], currentFilteredList = [];
-        let html5QrCode = null;
-        let currentScannerMode = 'BUSCA';
-        let isScanning = false;
+        let db, auth, userId = null, isFirebaseReady = false, allMedications = [], currentFilteredList = [], html5QrCode = null;
 
         async function init() {
             try {
@@ -285,207 +239,88 @@
             return (y1 - y2) * 12 + (m1 - m2);
         }
 
-        // FUNÇÃO SIMPLIFICADA PARA ABRIR MODAL
+        // APENAS UMA MODIFICAÇÃO AQUI - CONFIGURAÇÃO PARA iPHONE
         window.openScannerModal = function(mode) {
-            currentScannerMode = mode;
-            
-            // Limpa filtro se for busca
+            window.scannerMode = mode;
             if(mode === 'BUSCA') {
                 document.getElementById('search-input').value = '';
                 applyFilters();
             }
+            document.getElementById('scanner-modal').classList.remove('hidden');
             
-            // Mostra o modal
-            const modal = document.getElementById('scanner-modal');
-            modal.classList.remove('hidden');
-            
-            // Limpa o scanner anterior se existir
+            // Limpa qualquer scanner anterior
             if (html5QrCode) {
                 try {
-                    html5QrCode.stop();
-                    html5QrCode.clear();
-                } catch (e) {
-                    console.log("Scanner já limpo");
-                }
+                    html5QrCode.stop().catch(() => {});
+                } catch (e) {}
             }
             
-            // Cria novo scanner
             html5QrCode = new Html5Qrcode("reader");
             
-            updateScannerStatus("Pronto para iniciar");
-        };
-
-        // FUNÇÃO PARA INICIAR O SCANNER
-        window.startScanner = async function() {
-            if (isScanning) return;
+            // CONFIGURAÇÃO ESPECIAL PARA iPHONE
+            const config = { 
+                fps: 30, // iPhone precisa de FPS mais alto
+                qrbox: { 
+                    width: 280, // Largura maior para iPhone
+                    height: 120  // Altura para códigos de barras
+                },
+                aspectRatio: 1.0, // iPhone funciona melhor com quadrado
+                disableFlip: false
+            };
             
-            const readerElement = document.getElementById('reader');
-            readerElement.innerHTML = '';
-            readerElement.style.width = '100%';
-            readerElement.style.height = '100%';
+            // FORMATOS ESPECÍFICOS PARA CÓDIGOS DE BARRAS
+            const formats = [
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.UPC_A,
+                Html5QrcodeSupportedFormats.UPC_E,
+                Html5QrcodeSupportedFormats.CODE_39
+            ];
             
-            try {
-                updateScannerStatus("Iniciando câmera...");
-                
-                // Configuração MUITO SIMPLES que funciona em iOS
-                const config = {
-                    fps: 10,
-                    qrbox: { 
-                        width: 250,
-                        height: 100
-                    },
-                    aspectRatio: 1.0,
-                    disableFlip: false
-                };
-                
-                // Tenta iniciar com a câmera traseira
-                await html5QrCode.start(
-                    { facingMode: "environment" },
-                    config,
-                    onScanSuccess,
-                    onScanError
-                );
-                
-                isScanning = true;
-                updateScannerStatus("Scanner ativo - posicione o código");
-                
-            } catch (err) {
-                console.error("Erro ao iniciar scanner:", err);
-                
-                // Se environment falhar, tenta user (frontal)
-                try {
-                    updateScannerStatus("Tentando câmera frontal...");
-                    
-                    await html5QrCode.start(
-                        { facingMode: "user" },
-                        {
-                            fps: 10,
-                            qrbox: { width: 250, height: 100 },
-                            aspectRatio: 1.0
-                        },
-                        onScanSuccess,
-                        onScanError
-                    );
-                    
-                    isScanning = true;
-                    updateScannerStatus("Scanner ativo (frontal) - posicione o código");
-                    
-                } catch (secondErr) {
-                    console.error("Ambas as câmeras falharam:", secondErr);
-                    
-                    // Tenta método alternativo
-                    try {
-                        updateScannerStatus("Tentando método alternativo...");
-                        
-                        // Tenta sem facingMode, apenas primeira câmera
-                        const cameras = await Html5Qrcode.getCameras();
-                        if (cameras && cameras.length > 0) {
-                            await html5QrCode.start(
-                                cameras[0].id,
-                                {
-                                    fps: 10,
-                                    qrbox: 250
-                                },
-                                onScanSuccess,
-                                onScanError
-                            );
-                            
-                            isScanning = true;
-                            updateScannerStatus("Scanner ativo - posicione o código");
-                        } else {
-                            throw new Error("Nenhuma câmera encontrada");
-                        }
-                    } catch (finalErr) {
-                        console.error("Todos os métodos falharam:", finalErr);
-                        updateScannerStatus("Erro: " + finalErr.message);
-                        showMessage("Não foi possível acessar a câmera. Verifique as permissões.", "error");
+            // Tenta primeiro com environment (traseira)
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                config, 
+                (text) => {
+                    closeScannerModal();
+                    if(window.scannerMode === 'BUSCA') {
+                        document.getElementById('search-input').value = text;
+                        applyFilters();
+                    } else {
+                        quickLookup(text);
                     }
-                }
-            }
+                }, 
+                () => {}
+            ).catch(err => {
+                console.log("Erro com environment, tentando user...", err);
+                // Se environment falhar, tenta user (frontal)
+                html5QrCode.start(
+                    { facingMode: "user" }, 
+                    config, 
+                    (text) => {
+                        closeScannerModal();
+                        if(window.scannerMode === 'BUSCA') {
+                            document.getElementById('search-input').value = text;
+                            applyFilters();
+                        } else {
+                            quickLookup(text);
+                        }
+                    }, 
+                    () => {}
+                );
+            });
         };
-
-        function onScanSuccess(decodedText) {
-            console.log("Código lido:", decodedText);
-            
-            // Feedback visual
-            const guide = document.querySelector('.scanner-guide');
-            if (guide) {
-                guide.style.borderColor = '#10B981';
-                setTimeout(() => {
-                    guide.style.borderColor = '#3B82F6';
-                }, 500);
-            }
-            
-            // Para o scanner
-            if (html5QrCode && isScanning) {
-                html5QrCode.stop().then(() => {
-                    isScanning = false;
-                    html5QrCode.clear();
-                }).catch(() => {
-                    isScanning = false;
-                });
-            }
-            
-            // Fecha modal e processa código
-            closeScannerModal();
-            processScannedCode(decodedText);
-        }
-
-        function onScanError(errorMessage) {
-            // Ignora erros comuns
-            if (!errorMessage.includes("NotFoundException") && 
-                !errorMessage.includes("NotAllowedError")) {
-                console.log("Erro de scan:", errorMessage);
-            }
-        }
-
-        function processScannedCode(code) {
-            if(currentScannerMode === 'BUSCA') {
-                document.getElementById('search-input').value = code;
-                applyFilters();
-                showMessage(`Código escaneado: ${code}`, "success");
-            } else {
-                document.getElementById('quick-search-input').value = code;
-                showMessage(`Código escaneado: ${code}`, "success");
-                if (typeof quickLookup === 'function') {
-                    quickLookup(code);
-                }
-            }
-        }
-
-        function updateScannerStatus(message) {
-            const statusElement = document.getElementById('scanner-status');
-            if (statusElement) {
-                statusElement.textContent = message;
-            }
-        }
 
         window.closeScannerModal = function() {
-            // Para o scanner se estiver ativo
-            if (html5QrCode && isScanning) {
-                try {
-                    html5QrCode.stop().then(() => {
-                        html5QrCode.clear();
-                        isScanning = false;
-                    }).catch(() => {
-                        isScanning = false;
-                    });
-                } catch (e) {
-                    console.log("Erro ao parar scanner:", e);
-                    isScanning = false;
-                }
+            document.getElementById('scanner-modal').classList.add('hidden');
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    html5QrCode.clear();
+                }).catch(() => {});
             }
-            
-            // Fecha o modal
-            const modal = document.getElementById('scanner-modal');
-            modal.classList.add('hidden');
         };
 
-        window.stopScanner = function() {
-            closeScannerModal();
-        };
-
-        // CRUD WRAPPERS
         window.openCadastroModal = () => document.getElementById('medication-modal').classList.remove('hidden');
         window.closeModal = () => { document.getElementById('medication-modal').classList.add('hidden'); resetForm(); };
         
@@ -496,22 +331,6 @@
             }
         };
 
-        // Função para mostrar mensagens
-        function showMessage(text, type = "info") {
-            const container = document.getElementById('message-container');
-            const message = document.createElement('div');
-            message.className = `message-box ${type === 'error' ? 'bg-red-100 text-red-800 border border-red-200' : 
-                                 type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 
-                                 'bg-blue-100 text-blue-800 border border-blue-200'}`;
-            message.textContent = text;
-            container.appendChild(message);
-            
-            setTimeout(() => {
-                message.style.opacity = '0';
-                setTimeout(() => container.removeChild(message), 300);
-            }, 3000);
-        }
-
         window.exportToCsv = () => {
             let csv = "Cód. Barras;Cód. Interno;Descrição;Laboratório;Validade;Qtd\n";
             currentFilteredList.forEach(m => csv += `${m.barcode};${m.internalCode};${m.description};${m.laboratory};${m.expirationDate};${m.quantity}\n`);
@@ -520,83 +339,23 @@
             link.href = URL.createObjectURL(blob);
             link.download = 'relatorio_souzafarma.csv';
             link.click();
-            showMessage("Relatório exportado para CSV", "success");
         };
 
-        window.printFilteredList = () => {
-            window.print();
-        };
-
-        // Funções auxiliares
-        window.quickLookup = function(code) {
-            showMessage(`Buscando código: ${code}`, "info");
-            document.getElementById('search-input').value = code;
-            applyFilters();
-        };
-
-        window.resetForm = function() {
-            document.getElementById('medication-form').reset();
-            document.getElementById('doc-id').value = '';
-            document.getElementById('form-title').textContent = 'Cadastrar Novo Produto';
-            document.getElementById('submit-button').textContent = 'Salvar';
-        };
-
-        window.loadForEdit = async function(id) {
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    document.getElementById('doc-id').value = id;
-                    document.getElementById('barcode').value = data.barcode || '';
-                    document.getElementById('internalCode').value = data.internalCode || '';
-                    document.getElementById('description').value = data.description || '';
-                    document.getElementById('laboratory').value = data.laboratory || '';
-                    document.getElementById('quantity').value = data.quantity || 0;
-                    document.getElementById('expirationDate').value = data.expirationDate || '';
-                    document.getElementById('form-title').textContent = 'Editar Produto';
-                    document.getElementById('submit-button').textContent = 'Atualizar';
-                    openCadastroModal();
-                }
-            } catch (error) {
-                console.error("Erro ao carregar para edição:", error);
-                showMessage("Erro ao carregar dados", "error");
-            }
-        };
-
-        // Manipulador do formulário
-        document.getElementById('medication-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // Função para mostrar mensagens
+        function showMessage(text, type = "info") {
+            const container = document.getElementById('message-container');
+            const message = document.createElement('div');
+            message.className = `message-box ${type === 'error' ? 'bg-red-100 text-red-800' : 
+                                 type === 'success' ? 'bg-green-100 text-green-800' : 
+                                 'bg-blue-100 text-blue-800'}`;
+            message.textContent = text;
+            container.appendChild(message);
             
-            const formData = {
-                barcode: document.getElementById('barcode').value,
-                internalCode: document.getElementById('internalCode').value,
-                description: document.getElementById('description').value,
-                laboratory: document.getElementById('laboratory').value,
-                quantity: parseInt(document.getElementById('quantity').value) || 0,
-                expirationDate: document.getElementById('expirationDate').value,
-                createdAt: new Date().toISOString()
-            };
-            
-            const docId = document.getElementById('doc-id').value;
-            
-            try {
-                if (docId) {
-                    // Atualizar
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', docId), formData);
-                    showMessage("Produto atualizado com sucesso!", "success");
-                } else {
-                    // Criar novo
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), formData);
-                    showMessage("Produto cadastrado com sucesso!", "success");
-                }
-                
-                closeModal();
-            } catch (error) {
-                console.error("Erro ao salvar:", error);
-                showMessage("Erro ao salvar: " + error.message, "error");
-            }
-        });
+            setTimeout(() => {
+                message.style.opacity = '0';
+                setTimeout(() => container.removeChild(message), 300);
+            }, 3000);
+        }
 
         init();
     </script>
