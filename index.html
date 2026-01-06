@@ -6,12 +6,10 @@
     <title>Souza Farma - Controle de Validade (Produção)</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Barcode Scanner Library -->
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <!-- ZXing Browser - MUITO melhor para iPhone -->
+    <script src="https://unpkg.com/@zxing/browser@0.1.1"></script>
     <!-- Google Font - Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- Barcode detector library -->
-    <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.7.7/dist/quagga.min.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         .container { max-width: 1200px; margin: auto; padding: 1rem; }
@@ -22,34 +20,30 @@
         .modal-content { background-color: white; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); max-width: 90%; width: 500px; max-height: 90vh; overflow-y: auto; position: relative; }
         .logo-img { max-width: 100%; height: auto; margin: 0 auto 1.5rem; display: block; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         #scanner-modal .modal-content { max-width: 95%; width: 600px; }
-        /* Estilos para upload de imagem */
-        .upload-area {
-            border: 2px dashed #3b82f6;
-            border-radius: 8px;
-            padding: 2rem;
-            text-align: center;
-            background-color: #f8fafc;
-            cursor: pointer;
-            transition: all 0.3s;
+        /* Scanner com ZXing */
+        .scanner-container { width: 100%; height: 400px; position: relative; overflow: hidden; border-radius: 8px; background: #000; margin-bottom: 1rem; }
+        #scanner-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
-        .upload-area:hover {
-            background-color: #eff6ff;
-            border-color: #1d4ed8;
-        }
-        .upload-area.dragover {
-            background-color: #dbeafe;
-            border-color: #1d4ed8;
-        }
-        .preview-img {
-            max-width: 100%;
-            max-height: 300px;
-            margin: 1rem auto;
-            display: block;
-            border-radius: 8px;
+        .scanner-guide { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            width: 280px; 
+            height: 120px; 
+            border: 3px solid #3B82F6; 
+            border-radius: 8px; 
+            z-index: 10; 
+            pointer-events: none;
         }
         @media (max-width: 640px) { 
             .sm\:table-cell { display: none !important; } 
             #scanner-modal .modal-content { width: 95%; max-width: 95%; padding: 1rem; }
+            .scanner-container { height: 300px; }
+            .scanner-guide { width: 220px; height: 100px; }
         }
         @media print { .no-print { display: none !important; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 10pt; } }
     </style>
@@ -182,68 +176,24 @@
         </div>
     </div>
 
-    <!-- Modal do Scanner - AGORA COM UPLOAD DE IMAGEM -->
+    <!-- Modal do Scanner com ZXing -->
     <div id="scanner-modal" class="modal-overlay hidden no-print">
         <div class="modal-content">
-            <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="closeScannerModal()"> &times; </button>
-            <h2 class="text-xl font-semibold mb-4 text-blue-700">Ler Código de Barras</h2>
+            <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl z-20" onclick="closeScannerModal()"> &times; </button>
+            <h2 class="text-xl font-semibold mb-4 text-blue-700">Scanner de Código de Barras</h2>
+            <p class="text-sm text-gray-600 mb-4" id="scanner-status">Posicione o código de barras dentro da área azul</p>
             
-            <div class="mb-6">
-                <p class="text-sm text-gray-600 mb-4">Escolha uma opção:</p>
-                <div class="flex space-x-4 mb-6">
-                    <button onclick="showCameraOption()" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg">
-                        Usar Câmera
-                    </button>
-                    <button onclick="showUploadOption()" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg">
-                        Upload de Foto
-                    </button>
-                </div>
+            <div class="scanner-container">
+                <div class="scanner-guide"></div>
+                <video id="scanner-video" playsinline></video>
             </div>
-
-            <!-- Opção da Câmera -->
-            <div id="camera-option" class="hidden">
-                <div id="reader"></div>
-                <p class="mt-4 text-center text-gray-600 text-sm">Posicione o código de barras no centro.</p>
-            </div>
-
-            <!-- Opção de Upload -->
-            <div id="upload-option" class="hidden">
-                <div class="upload-area" id="upload-area" onclick="document.getElementById('image-input').click()">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-blue-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <p class="text-lg font-medium text-gray-700">Clique para selecionar uma foto</p>
-                    <p class="text-sm text-gray-500 mt-2">ou arraste e solte a imagem aqui</p>
-                    <p class="text-xs text-gray-400 mt-1">Formatos suportados: JPG, PNG</p>
-                </div>
-                <input type="file" id="image-input" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
-                
-                <div id="image-preview" class="hidden">
-                    <img id="preview-img" class="preview-img" alt="Pré-visualização">
-                    <div class="mt-4 flex justify-center space-x-4">
-                        <button onclick="scanBarcodeFromImage()" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-lg">
-                            Ler Código
-                        </button>
-                        <button onclick="clearImage()" class="bg-gray-500 hover:bg-gray-600 text-white py-2 px-6 rounded-lg">
-                            Nova Foto
-                        </button>
-                    </div>
-                </div>
-                
-                <div id="scan-result" class="mt-4 hidden">
-                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <p class="text-green-700 font-medium">Código detectado:</p>
-                        <p id="detected-code" class="text-green-900 text-xl font-bold mt-2"></p>
-                        <button onclick="useDetectedCode()" class="mt-4 bg-green-600 hover:bg-green-700 text-white py-2 px-6 rounded-lg">
-                            Usar este Código
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-6 text-center">
-                <button onclick="closeScannerModal()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg">
-                    Fechar
+            
+            <div class="mt-4 text-center">
+                <button onclick="toggleCamera()" id="toggle-camera-btn" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg mr-2">
+                    Alternar Câmera
+                </button>
+                <button onclick="stopScanner()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg">
+                    Parar Scanner
                 </button>
             </div>
         </div>
@@ -257,9 +207,11 @@
         const APP_CONFIG = { apiKey: "AIzaSyDc9-jix-tXCV8JHzivDR8pY1iCNNJeDPg", authDomain: "controle-de-validade-e708a.firebaseapp.com", projectId: "controle-de-validade-e708a", storageBucket: "controle-de-validade-e708a.firebasestorage.app", messagingSenderId: "300173058270", appId: "1:300173058270:web:970549624a4c46af3d624f" };
         const appId = typeof __app_id !== 'undefined' ? __app_id : "controle-de-validade-e708a";
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        let db, auth, userId = null, isFirebaseReady = false, allMedications = [], currentFilteredList = [], html5QrCode = null;
+        let db, auth, userId = null, isFirebaseReady = false, allMedications = [], currentFilteredList = [];
         let currentScannerMode = 'BUSCA';
-        let uploadedImage = null;
+        let codeReader = null;
+        let videoStream = null;
+        let isRearCamera = true;
 
         async function init() {
             try {
@@ -336,173 +288,137 @@
             return (y1 - y2) * 12 + (m1 - m2);
         }
 
-        // FUNÇÕES DO SCANNER
-        window.openScannerModal = function(mode) {
+        // SCANNER COM ZXING - FUNCIONA NO IPHONE
+        window.openScannerModal = async function(mode) {
             currentScannerMode = mode;
+            
+            // Limpa filtro se for busca
             if(mode === 'BUSCA') {
                 document.getElementById('search-input').value = '';
                 applyFilters();
             }
-            document.getElementById('scanner-modal').classList.remove('hidden');
-            showUploadOption(); // Mostra upload por padrão (funciona sempre)
+            
+            // Mostra o modal
+            const modal = document.getElementById('scanner-modal');
+            modal.classList.remove('hidden');
+            
+            // Inicia o scanner após um pequeno delay
+            setTimeout(() => {
+                startZXingScanner();
+            }, 300);
         };
 
-        window.showCameraOption = function() {
-            document.getElementById('camera-option').classList.remove('hidden');
-            document.getElementById('upload-option').classList.add('hidden');
-            
-            // Tenta iniciar câmera
-            if (html5QrCode) {
-                try {
-                    html5QrCode.stop();
-                } catch (e) {}
-            }
-            
-            html5QrCode = new Html5Qrcode("reader");
-            const config = { fps: 15, qrbox: { width: 350, height: 100 }, supportedScanTypes: [0, 1] };
-            
-            html5QrCode.start({ facingMode: "environment" }, config, (text) => {
-                closeScannerModal();
-                processScannedCode(text);
-            }, () => {});
-        };
-
-        window.showUploadOption = function() {
-            document.getElementById('camera-option').classList.add('hidden');
-            document.getElementById('upload-option').classList.remove('hidden');
-            
-            // Para câmera se estiver ativa
-            if (html5QrCode) {
-                try {
-                    html5QrCode.stop();
-                } catch (e) {}
-            }
-            
-            // Configura drag and drop
-            const uploadArea = document.getElementById('upload-area');
-            uploadArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                uploadArea.classList.add('dragover');
-            });
-            
-            uploadArea.addEventListener('dragleave', () => {
-                uploadArea.classList.remove('dragover');
-            });
-            
-            uploadArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                uploadArea.classList.remove('dragover');
-                if (e.dataTransfer.files.length) {
-                    handleImageUpload({ target: { files: e.dataTransfer.files } });
-                }
-            });
-        };
-
-        window.handleImageUpload = function(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            if (!file.type.match('image.*')) {
-                showMessage("Por favor, selecione apenas imagens.", "error");
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                uploadedImage = e.target.result;
-                document.getElementById('preview-img').src = uploadedImage;
-                document.getElementById('image-preview').classList.remove('hidden');
-                document.getElementById('scan-result').classList.add('hidden');
-            };
-            reader.readAsDataURL(file);
-        };
-
-        window.scanBarcodeFromImage = async function() {
-            if (!uploadedImage) {
-                showMessage("Nenhuma imagem carregada.", "error");
-                return;
-            }
-            
-            showMessage("Processando imagem...", "info");
-            
+        async function startZXingScanner() {
             try {
-                // Primeiro tenta com Quagga (melhor para códigos de barras)
-                const result = await decodeBarcodeWithQuagga(uploadedImage);
+                updateScannerStatus("Iniciando scanner...");
                 
-                if (result) {
-                    document.getElementById('detected-code').textContent = result;
-                    document.getElementById('scan-result').classList.remove('hidden');
-                    showMessage("Código detectado com sucesso!", "success");
-                } else {
-                    // Se Quagga falhar, tenta html5-qrcode
-                    const qrResult = await decodeBarcodeWithHtml5Qrcode(uploadedImage);
-                    if (qrResult) {
-                        document.getElementById('detected-code').textContent = qrResult;
-                        document.getElementById('scan-result').classList.remove('hidden');
-                        showMessage("Código detectado com sucesso!", "success");
+                // Inicializa o leitor ZXing
+                const hints = new Map();
+                hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+                    ZXing.BarcodeFormat.CODE_128,
+                    ZXing.BarcodeFormat.EAN_13,
+                    ZXing.BarcodeFormat.EAN_8,
+                    ZXing.BarcodeFormat.UPC_A,
+                    ZXing.BarcodeFormat.UPC_E,
+                    ZXing.BarcodeFormat.CODE_39,
+                    ZXing.BarcodeFormat.CODABAR,
+                    ZXing.BarcodeFormat.ITF
+                ]);
+                
+                codeReader = new ZXing.BrowserMultiFormatReader();
+                codeReader.hints = hints;
+                
+                // Obtém lista de câmeras
+                const videoInputDevices = await ZXing.BrowserMultiFormatReader.listVideoInputDevices();
+                
+                let selectedDeviceId;
+                
+                if (videoInputDevices.length > 0) {
+                    // Encontra câmera traseira
+                    const rearCamera = videoInputDevices.find(device => 
+                        device.label.toLowerCase().includes('back') || 
+                        device.label.toLowerCase().includes('rear') ||
+                        device.label.toLowerCase().includes('environment') ||
+                        device.label.toLowerCase().includes('traseira')
+                    );
+                    
+                    // Encontra câmera frontal
+                    const frontCamera = videoInputDevices.find(device => 
+                        device.label.toLowerCase().includes('front') || 
+                        device.label.toLowerCase().includes('user') ||
+                        device.label.toLowerCase().includes('selfie') ||
+                        device.label.toLowerCase().includes('frontal')
+                    );
+                    
+                    // Escolhe a câmera com base na preferência
+                    if (isRearCamera && rearCamera) {
+                        selectedDeviceId = rearCamera.deviceId;
+                        updateScannerStatus("Usando câmera traseira");
+                    } else if (!isRearCamera && frontCamera) {
+                        selectedDeviceId = frontCamera.deviceId;
+                        updateScannerStatus("Usando câmera frontal");
                     } else {
-                        showMessage("Não foi possível detectar código de barras na imagem. Tente uma foto mais clara.", "error");
+                        // Usa primeira câmera disponível
+                        selectedDeviceId = videoInputDevices[0].deviceId;
+                        updateScannerStatus("Usando câmera disponível");
                     }
                 }
-            } catch (error) {
-                console.error("Erro ao decodificar:", error);
-                showMessage("Erro ao processar imagem: " + error.message, "error");
+                
+                // Configura o elemento de vídeo
+                const videoElement = document.getElementById('scanner-video');
+                
+                // Decode from camera
+                codeReader.decodeFromVideoDevice(
+                    selectedDeviceId, 
+                    videoElement, 
+                    (result, err) => {
+                        if (result) {
+                            // Código detectado!
+                            handleScannedCode(result.text);
+                        }
+                        
+                        if (err && !(err instanceof ZXing.NotFoundException)) {
+                            console.log("Erro de scan:", err);
+                        }
+                    }
+                );
+                
+                // Guarda a stream para poder parar depois
+                videoStream = videoElement.srcObject;
+                
+                updateScannerStatus("Scanner ativo - aponte para o código");
+                
+            } catch (err) {
+                console.error("Erro ao iniciar scanner:", err);
+                updateScannerStatus("Erro: " + err.message);
+                showMessage("Erro ao iniciar scanner. Tente novamente.", "error");
+                closeScannerModal();
             }
-        };
-
-        async function decodeBarcodeWithQuagga(imageData) {
-            return new Promise((resolve) => {
-                Quagga.decodeSingle({
-                    decoder: {
-                        readers: [
-                            "code_128_reader",
-                            "ean_reader",
-                            "ean_8_reader",
-                            "code_39_reader",
-                            "upc_reader",
-                            "upc_e_reader"
-                        ]
-                    },
-                    locate: true,
-                    src: imageData,
-                }, function(result) {
-                    if (result && result.codeResult) {
-                        resolve(result.codeResult.code);
-                    } else {
-                        resolve(null);
-                    }
-                });
-            });
         }
 
-        async function decodeBarcodeWithHtml5Qrcode(imageData) {
-            return new Promise((resolve) => {
-                if (!html5QrCode) {
-                    html5QrCode = new Html5Qrcode("dummy");
-                }
+        function handleScannedCode(code) {
+            console.log("Código detectado:", code);
+            
+            // Feedback visual
+            const guide = document.querySelector('.scanner-guide');
+            if (guide) {
+                const originalColor = guide.style.borderColor;
+                guide.style.borderColor = '#10B981';
+                guide.style.boxShadow = '0 0 20px #10B981';
                 
-                html5QrCode.scanFile(imageData, false)
-                    .then(decodedText => {
-                        resolve(decodedText);
-                    })
-                    .catch(() => {
-                        resolve(null);
-                    });
-            });
-        }
-
-        window.clearImage = function() {
-            uploadedImage = null;
-            document.getElementById('image-input').value = '';
-            document.getElementById('image-preview').classList.add('hidden');
-            document.getElementById('scan-result').classList.add('hidden');
-        };
-
-        window.useDetectedCode = function() {
-            const code = document.getElementById('detected-code').textContent;
+                setTimeout(() => {
+                    guide.style.borderColor = '#3B82F6';
+                    guide.style.boxShadow = 'none';
+                }, 500);
+            }
+            
+            // Para o scanner
+            stopScanner();
+            
+            // Fecha modal e processa código
             closeScannerModal();
             processScannedCode(code);
-        };
+        }
 
         function processScannedCode(code) {
             if(currentScannerMode === 'BUSCA') {
@@ -518,14 +434,44 @@
             }
         }
 
-        window.closeScannerModal = function() {
-            document.getElementById('scanner-modal').classList.add('hidden');
-            if (html5QrCode) {
-                try {
-                    html5QrCode.stop();
-                } catch (e) {}
+        function updateScannerStatus(message) {
+            const statusElement = document.getElementById('scanner-status');
+            if (statusElement) {
+                statusElement.textContent = message;
             }
-            clearImage();
+        }
+
+        window.toggleCamera = function() {
+            isRearCamera = !isRearCamera;
+            stopScanner();
+            startZXingScanner();
+        };
+
+        window.stopScanner = function() {
+            if (codeReader) {
+                try {
+                    codeReader.reset();
+                    codeReader = null;
+                } catch (e) {
+                    console.log("Erro ao parar scanner:", e);
+                }
+            }
+            
+            // Para a stream de vídeo
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+            
+            const videoElement = document.getElementById('scanner-video');
+            if (videoElement) {
+                videoElement.srcObject = null;
+            }
+        };
+
+        window.closeScannerModal = function() {
+            stopScanner();
+            document.getElementById('scanner-modal').classList.add('hidden');
         };
 
         // CRUD WRAPPERS
