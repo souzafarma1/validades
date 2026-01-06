@@ -10,6 +10,8 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <!-- Google Font - Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Barcode detector library -->
+    <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.7.7/dist/quagga.min.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         .container { max-width: 1200px; margin: auto; padding: 1rem; }
@@ -17,10 +19,38 @@
         input[type="month"] { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
         #expirationDate, #expiration-filter { padding: 6px; line-height: normal; }
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 50; }
-        .modal-content { background-color: white; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); max-width: 90%; width: 500px; max-height: 90vh; overflow-y auto; position: relative; }
+        .modal-content { background-color: white; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); max-width: 90%; width: 500px; max-height: 90vh; overflow-y: auto; position: relative; }
         .logo-img { max-width: 100%; height: auto; margin: 0 auto 1.5rem; display: block; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         #scanner-modal .modal-content { max-width: 95%; width: 600px; }
-        @media (max-width: 640px) { .sm\:table-cell { display: none !important; } }
+        /* Estilos para upload de imagem */
+        .upload-area {
+            border: 2px dashed #3b82f6;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            background-color: #f8fafc;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area:hover {
+            background-color: #eff6ff;
+            border-color: #1d4ed8;
+        }
+        .upload-area.dragover {
+            background-color: #dbeafe;
+            border-color: #1d4ed8;
+        }
+        .preview-img {
+            max-width: 100%;
+            max-height: 300px;
+            margin: 1rem auto;
+            display: block;
+            border-radius: 8px;
+        }
+        @media (max-width: 640px) { 
+            .sm\:table-cell { display: none !important; } 
+            #scanner-modal .modal-content { width: 95%; max-width: 95%; padding: 1rem; }
+        }
         @media print { .no-print { display: none !important; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 10pt; } }
     </style>
 </head>
@@ -152,7 +182,72 @@
         </div>
     </div>
 
-    <div id="scanner-modal" class="modal-overlay hidden no-print"><div class="modal-content"><button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="closeScannerModal()"> &times; </button><h2 class="text-xl font-semibold mb-4 text-blue-700">Scanner de Código de Barras</h2><div id="reader"></div><p class="mt-4 text-center text-gray-600 text-sm">Posicione o código de barras no centro.</p></div></div>
+    <!-- Modal do Scanner - AGORA COM UPLOAD DE IMAGEM -->
+    <div id="scanner-modal" class="modal-overlay hidden no-print">
+        <div class="modal-content">
+            <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="closeScannerModal()"> &times; </button>
+            <h2 class="text-xl font-semibold mb-4 text-blue-700">Ler Código de Barras</h2>
+            
+            <div class="mb-6">
+                <p class="text-sm text-gray-600 mb-4">Escolha uma opção:</p>
+                <div class="flex space-x-4 mb-6">
+                    <button onclick="showCameraOption()" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg">
+                        Usar Câmera
+                    </button>
+                    <button onclick="showUploadOption()" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg">
+                        Upload de Foto
+                    </button>
+                </div>
+            </div>
+
+            <!-- Opção da Câmera -->
+            <div id="camera-option" class="hidden">
+                <div id="reader"></div>
+                <p class="mt-4 text-center text-gray-600 text-sm">Posicione o código de barras no centro.</p>
+            </div>
+
+            <!-- Opção de Upload -->
+            <div id="upload-option" class="hidden">
+                <div class="upload-area" id="upload-area" onclick="document.getElementById('image-input').click()">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-blue-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p class="text-lg font-medium text-gray-700">Clique para selecionar uma foto</p>
+                    <p class="text-sm text-gray-500 mt-2">ou arraste e solte a imagem aqui</p>
+                    <p class="text-xs text-gray-400 mt-1">Formatos suportados: JPG, PNG</p>
+                </div>
+                <input type="file" id="image-input" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+                
+                <div id="image-preview" class="hidden">
+                    <img id="preview-img" class="preview-img" alt="Pré-visualização">
+                    <div class="mt-4 flex justify-center space-x-4">
+                        <button onclick="scanBarcodeFromImage()" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-lg">
+                            Ler Código
+                        </button>
+                        <button onclick="clearImage()" class="bg-gray-500 hover:bg-gray-600 text-white py-2 px-6 rounded-lg">
+                            Nova Foto
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="scan-result" class="mt-4 hidden">
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <p class="text-green-700 font-medium">Código detectado:</p>
+                        <p id="detected-code" class="text-green-900 text-xl font-bold mt-2"></p>
+                        <button onclick="useDetectedCode()" class="mt-4 bg-green-600 hover:bg-green-700 text-white py-2 px-6 rounded-lg">
+                            Usar este Código
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 text-center">
+                <button onclick="closeScannerModal()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -163,6 +258,8 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : "controle-de-validade-e708a";
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         let db, auth, userId = null, isFirebaseReady = false, allMedications = [], currentFilteredList = [], html5QrCode = null;
+        let currentScannerMode = 'BUSCA';
+        let uploadedImage = null;
 
         async function init() {
             try {
@@ -239,88 +336,199 @@
             return (y1 - y2) * 12 + (m1 - m2);
         }
 
-        // APENAS UMA MODIFICAÇÃO AQUI - CONFIGURAÇÃO PARA iPHONE
+        // FUNÇÕES DO SCANNER
         window.openScannerModal = function(mode) {
-            window.scannerMode = mode;
+            currentScannerMode = mode;
             if(mode === 'BUSCA') {
                 document.getElementById('search-input').value = '';
                 applyFilters();
             }
             document.getElementById('scanner-modal').classList.remove('hidden');
+            showUploadOption(); // Mostra upload por padrão (funciona sempre)
+        };
+
+        window.showCameraOption = function() {
+            document.getElementById('camera-option').classList.remove('hidden');
+            document.getElementById('upload-option').classList.add('hidden');
             
-            // Limpa qualquer scanner anterior
+            // Tenta iniciar câmera
             if (html5QrCode) {
                 try {
-                    html5QrCode.stop().catch(() => {});
+                    html5QrCode.stop();
                 } catch (e) {}
             }
             
             html5QrCode = new Html5Qrcode("reader");
+            const config = { fps: 15, qrbox: { width: 350, height: 100 }, supportedScanTypes: [0, 1] };
             
-            // CONFIGURAÇÃO ESPECIAL PARA iPHONE
-            const config = { 
-                fps: 30, // iPhone precisa de FPS mais alto
-                qrbox: { 
-                    width: 280, // Largura maior para iPhone
-                    height: 120  // Altura para códigos de barras
-                },
-                aspectRatio: 1.0, // iPhone funciona melhor com quadrado
-                disableFlip: false
-            };
+            html5QrCode.start({ facingMode: "environment" }, config, (text) => {
+                closeScannerModal();
+                processScannedCode(text);
+            }, () => {});
+        };
+
+        window.showUploadOption = function() {
+            document.getElementById('camera-option').classList.add('hidden');
+            document.getElementById('upload-option').classList.remove('hidden');
             
-            // FORMATOS ESPECÍFICOS PARA CÓDIGOS DE BARRAS
-            const formats = [
-                Html5QrcodeSupportedFormats.CODE_128,
-                Html5QrcodeSupportedFormats.EAN_13,
-                Html5QrcodeSupportedFormats.EAN_8,
-                Html5QrcodeSupportedFormats.UPC_A,
-                Html5QrcodeSupportedFormats.UPC_E,
-                Html5QrcodeSupportedFormats.CODE_39
-            ];
+            // Para câmera se estiver ativa
+            if (html5QrCode) {
+                try {
+                    html5QrCode.stop();
+                } catch (e) {}
+            }
             
-            // Tenta primeiro com environment (traseira)
-            html5QrCode.start(
-                { facingMode: "environment" }, 
-                config, 
-                (text) => {
-                    closeScannerModal();
-                    if(window.scannerMode === 'BUSCA') {
-                        document.getElementById('search-input').value = text;
-                        applyFilters();
-                    } else {
-                        quickLookup(text);
-                    }
-                }, 
-                () => {}
-            ).catch(err => {
-                console.log("Erro com environment, tentando user...", err);
-                // Se environment falhar, tenta user (frontal)
-                html5QrCode.start(
-                    { facingMode: "user" }, 
-                    config, 
-                    (text) => {
-                        closeScannerModal();
-                        if(window.scannerMode === 'BUSCA') {
-                            document.getElementById('search-input').value = text;
-                            applyFilters();
-                        } else {
-                            quickLookup(text);
-                        }
-                    }, 
-                    () => {}
-                );
+            // Configura drag and drop
+            const uploadArea = document.getElementById('upload-area');
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                if (e.dataTransfer.files.length) {
+                    handleImageUpload({ target: { files: e.dataTransfer.files } });
+                }
             });
         };
+
+        window.handleImageUpload = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (!file.type.match('image.*')) {
+                showMessage("Por favor, selecione apenas imagens.", "error");
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedImage = e.target.result;
+                document.getElementById('preview-img').src = uploadedImage;
+                document.getElementById('image-preview').classList.remove('hidden');
+                document.getElementById('scan-result').classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.scanBarcodeFromImage = async function() {
+            if (!uploadedImage) {
+                showMessage("Nenhuma imagem carregada.", "error");
+                return;
+            }
+            
+            showMessage("Processando imagem...", "info");
+            
+            try {
+                // Primeiro tenta com Quagga (melhor para códigos de barras)
+                const result = await decodeBarcodeWithQuagga(uploadedImage);
+                
+                if (result) {
+                    document.getElementById('detected-code').textContent = result;
+                    document.getElementById('scan-result').classList.remove('hidden');
+                    showMessage("Código detectado com sucesso!", "success");
+                } else {
+                    // Se Quagga falhar, tenta html5-qrcode
+                    const qrResult = await decodeBarcodeWithHtml5Qrcode(uploadedImage);
+                    if (qrResult) {
+                        document.getElementById('detected-code').textContent = qrResult;
+                        document.getElementById('scan-result').classList.remove('hidden');
+                        showMessage("Código detectado com sucesso!", "success");
+                    } else {
+                        showMessage("Não foi possível detectar código de barras na imagem. Tente uma foto mais clara.", "error");
+                    }
+                }
+            } catch (error) {
+                console.error("Erro ao decodificar:", error);
+                showMessage("Erro ao processar imagem: " + error.message, "error");
+            }
+        };
+
+        async function decodeBarcodeWithQuagga(imageData) {
+            return new Promise((resolve) => {
+                Quagga.decodeSingle({
+                    decoder: {
+                        readers: [
+                            "code_128_reader",
+                            "ean_reader",
+                            "ean_8_reader",
+                            "code_39_reader",
+                            "upc_reader",
+                            "upc_e_reader"
+                        ]
+                    },
+                    locate: true,
+                    src: imageData,
+                }, function(result) {
+                    if (result && result.codeResult) {
+                        resolve(result.codeResult.code);
+                    } else {
+                        resolve(null);
+                    }
+                });
+            });
+        }
+
+        async function decodeBarcodeWithHtml5Qrcode(imageData) {
+            return new Promise((resolve) => {
+                if (!html5QrCode) {
+                    html5QrCode = new Html5Qrcode("dummy");
+                }
+                
+                html5QrCode.scanFile(imageData, false)
+                    .then(decodedText => {
+                        resolve(decodedText);
+                    })
+                    .catch(() => {
+                        resolve(null);
+                    });
+            });
+        }
+
+        window.clearImage = function() {
+            uploadedImage = null;
+            document.getElementById('image-input').value = '';
+            document.getElementById('image-preview').classList.add('hidden');
+            document.getElementById('scan-result').classList.add('hidden');
+        };
+
+        window.useDetectedCode = function() {
+            const code = document.getElementById('detected-code').textContent;
+            closeScannerModal();
+            processScannedCode(code);
+        };
+
+        function processScannedCode(code) {
+            if(currentScannerMode === 'BUSCA') {
+                document.getElementById('search-input').value = code;
+                applyFilters();
+                showMessage(`Código escaneado: ${code}`, "success");
+            } else {
+                document.getElementById('quick-search-input').value = code;
+                showMessage(`Código escaneado: ${code}`, "success");
+                if (typeof quickLookup === 'function') {
+                    quickLookup(code);
+                }
+            }
+        }
 
         window.closeScannerModal = function() {
             document.getElementById('scanner-modal').classList.add('hidden');
             if (html5QrCode) {
-                html5QrCode.stop().then(() => {
-                    html5QrCode.clear();
-                }).catch(() => {});
+                try {
+                    html5QrCode.stop();
+                } catch (e) {}
             }
+            clearImage();
         };
 
+        // CRUD WRAPPERS
         window.openCadastroModal = () => document.getElementById('medication-modal').classList.remove('hidden');
         window.closeModal = () => { document.getElementById('medication-modal').classList.add('hidden'); resetForm(); };
         
@@ -331,23 +539,13 @@
             }
         };
 
-        window.exportToCsv = () => {
-            let csv = "Cód. Barras;Cód. Interno;Descrição;Laboratório;Validade;Qtd\n";
-            currentFilteredList.forEach(m => csv += `${m.barcode};${m.internalCode};${m.description};${m.laboratory};${m.expirationDate};${m.quantity}\n`);
-            const blob = new Blob(["\uFEFF", csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'relatorio_souzafarma.csv';
-            link.click();
-        };
-
         // Função para mostrar mensagens
         function showMessage(text, type = "info") {
             const container = document.getElementById('message-container');
             const message = document.createElement('div');
-            message.className = `message-box ${type === 'error' ? 'bg-red-100 text-red-800' : 
-                                 type === 'success' ? 'bg-green-100 text-green-800' : 
-                                 'bg-blue-100 text-blue-800'}`;
+            message.className = `message-box ${type === 'error' ? 'bg-red-100 text-red-800 border border-red-200' : 
+                                 type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 
+                                 'bg-blue-100 text-blue-800 border border-blue-200'}`;
             message.textContent = text;
             container.appendChild(message);
             
@@ -356,6 +554,92 @@
                 setTimeout(() => container.removeChild(message), 300);
             }, 3000);
         }
+
+        window.exportToCsv = () => {
+            let csv = "Cód. Barras;Cód. Interno;Descrição;Laboratório;Validade;Qtd\n";
+            currentFilteredList.forEach(m => csv += `${m.barcode};${m.internalCode};${m.description};${m.laboratory};${m.expirationDate};${m.quantity}\n`);
+            const blob = new Blob(["\uFEFF", csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'relatorio_souzafarma.csv';
+            link.click();
+            showMessage("Relatório exportado para CSV", "success");
+        };
+
+        window.printFilteredList = () => {
+            window.print();
+        };
+
+        // Funções auxiliares
+        window.quickLookup = function(code) {
+            showMessage(`Buscando código: ${code}`, "info");
+            document.getElementById('search-input').value = code;
+            applyFilters();
+        };
+
+        window.resetForm = function() {
+            document.getElementById('medication-form').reset();
+            document.getElementById('doc-id').value = '';
+            document.getElementById('form-title').textContent = 'Cadastrar Novo Produto';
+            document.getElementById('submit-button').textContent = 'Salvar';
+        };
+
+        window.loadForEdit = async function(id) {
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    document.getElementById('doc-id').value = id;
+                    document.getElementById('barcode').value = data.barcode || '';
+                    document.getElementById('internalCode').value = data.internalCode || '';
+                    document.getElementById('description').value = data.description || '';
+                    document.getElementById('laboratory').value = data.laboratory || '';
+                    document.getElementById('quantity').value = data.quantity || 0;
+                    document.getElementById('expirationDate').value = data.expirationDate || '';
+                    document.getElementById('form-title').textContent = 'Editar Produto';
+                    document.getElementById('submit-button').textContent = 'Atualizar';
+                    openCadastroModal();
+                }
+            } catch (error) {
+                console.error("Erro ao carregar para edição:", error);
+                showMessage("Erro ao carregar dados", "error");
+            }
+        };
+
+        // Manipulador do formulário
+        document.getElementById('medication-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                barcode: document.getElementById('barcode').value,
+                internalCode: document.getElementById('internalCode').value,
+                description: document.getElementById('description').value,
+                laboratory: document.getElementById('laboratory').value,
+                quantity: parseInt(document.getElementById('quantity').value) || 0,
+                expirationDate: document.getElementById('expirationDate').value,
+                createdAt: new Date().toISOString()
+            };
+            
+            const docId = document.getElementById('doc-id').value;
+            
+            try {
+                if (docId) {
+                    // Atualizar
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', docId), formData);
+                    showMessage("Produto atualizado com sucesso!", "success");
+                } else {
+                    // Criar novo
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), formData);
+                    showMessage("Produto cadastrado com sucesso!", "success");
+                }
+                
+                closeModal();
+            } catch (error) {
+                console.error("Erro ao salvar:", error);
+                showMessage("Erro ao salvar: " + error.message, "error");
+            }
+        });
 
         init();
     </script>
