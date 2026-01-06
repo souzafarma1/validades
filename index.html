@@ -17,29 +17,29 @@
         input[type="month"] { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
         #expirationDate, #expiration-filter { padding: 6px; line-height: normal; }
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 50; }
-        .modal-content { background-color: white; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); max-width: 90%; width: 500px; max-height: 90vh; overflow-y: auto; position: relative; }
+        .modal-content { background-color: white; padding: 1rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); max-width: 95%; width: 95%; max-height: 90vh; overflow-y: auto; position: relative; }
         .logo-img { max-width: 100%; height: auto; margin: 0 auto 1.5rem; display: block; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-        #scanner-modal .modal-content { max-width: 95%; width: 600px; }
+        #scanner-modal .modal-content { max-width: 100%; width: 100%; height: 100%; border-radius: 0; padding: 0; background: #000; }
         @media (max-width: 640px) { .sm\:table-cell { display: none !important; } }
         @media print { .no-print { display: none !important; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 10pt; } }
         
-        /* Estilos aprimorados para o scanner - CORRIGIDO */
-        #reader { width: 100% !important; height: 350px !important; position: relative; overflow: hidden; }
-        #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; border-radius: 8px; }
-        .html5-qrcode-element { display: none; }
-        .scanner-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; height: 30%; border: 4px solid rgba(59, 130, 246, 0.7); border-radius: 8px; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5); pointer-events: none; z-index: 1; }
-        .scanner-line { position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.8), transparent); animation: scan 2s linear infinite; }
-        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
-        .scanner-instructions { margin-top: 1rem; padding: 0.75rem; background: #f0f9ff; border-radius: 0.5rem; border-left: 4px solid #3b82f6; font-size: 0.875rem; color: #1e40af; }
-        .scanner-buttons { display: flex; gap: 0.5rem; margin-top: 1rem; }
-        .scanner-buttons button { flex: 1; padding: 0.5rem; border-radius: 0.375rem; font-weight: 600; }
-        .torch-btn { background: #374151; color: white; }
-        .torch-btn.active { background: #f59e0b; }
-        .flip-btn { background: #6366f1; color: white; }
-        .flip-btn.active { background: #8b5cf6; }
-        .scanner-error { color: #dc2626; font-size: 0.875rem; text-align: center; padding: 1rem; }
-        .camera-permission { text-align: center; padding: 1rem; }
-        .camera-permission button { margin-top: 0.5rem; }
+        /* Estilos FULLSCREEN para o scanner - CORRIGIDO */
+        #scanner-modal .modal-content { position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100% !important; height: 100% !important; max-width: 100% !important; max-height: 100% !important; }
+        #reader { width: 100% !important; height: 100% !important; position: relative; }
+        #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; transform: scaleX(-1); /* Espelhar para parecer natural */ }
+        .scanner-container { position: relative; width: 100%; height: 100%; }
+        .scanner-header { position: absolute; top: 0; left: 0; right: 0; background: rgba(0, 0, 0, 0.7); color: white; padding: 1rem; z-index: 10; }
+        .scanner-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; height: 40%; border: 3px solid rgba(59, 130, 246, 0.8); border-radius: 12px; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7); pointer-events: none; z-index: 2; }
+        .scanner-line { position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 1), transparent); animation: scan 2.5s ease-in-out infinite; }
+        @keyframes scan { 0% { top: 0; opacity: 1; } 50% { top: 97%; opacity: 1; } 51% { opacity: 0; } 100% { top: 0; opacity: 0; } }
+        .scanner-footer { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0, 0, 0, 0.7); color: white; padding: 1rem; z-index: 10; }
+        .scanner-buttons { display: flex; gap: 1rem; justify-content: center; margin-top: 1rem; }
+        .scanner-btn { background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3); color: white; padding: 0.75rem 1.5rem; border-radius: 50px; font-weight: 600; backdrop-filter: blur(10px); display: flex; align-items: center; gap: 0.5rem; }
+        .scanner-btn.active { background: rgba(59, 130, 246, 0.7); }
+        .close-scanner { position: absolute; top: 1rem; right: 1rem; background: rgba(0, 0, 0, 0.7); color: white; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; z-index: 20; border: none; }
+        .instruction-text { text-align: center; margin-top: 0.5rem; font-size: 0.9rem; color: rgba(255, 255, 255, 0.9); }
+        .scanner-error { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(220, 38, 38, 0.9); color: white; padding: 1rem; border-radius: 8px; z-index: 30; text-align: center; }
+        .scanner-success { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(34, 197, 94, 0.9); color: white; padding: 1rem; border-radius: 8px; z-index: 30; text-align: center; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -170,52 +170,36 @@
         </div>
     </div>
 
-    <!-- Modal do Scanner Aprimorado -->
+    <!-- Modal do Scanner FULLSCREEN -->
     <div id="scanner-modal" class="modal-overlay hidden no-print">
-        <div class="modal-content">
-            <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl z-10" onclick="closeScannerModal()"> &times; </button>
-            <h2 class="text-xl font-semibold mb-4 text-blue-700">Scanner de Código de Barras</h2>
+        <div class="scanner-container">
+            <button class="close-scanner" onclick="closeScannerModal()"> &times; </button>
             
-            <div class="relative">
-                <div id="reader"></div>
-                <div class="scanner-frame">
-                    <div class="scanner-line"></div>
-                </div>
-                <div id="scanner-error" class="scanner-error hidden"></div>
-                <div id="camera-permission" class="camera-permission hidden">
-                    <p class="text-red-600 mb-2">Permissão da câmera necessária</p>
-                    <button onclick="requestCameraPermission()" class="bg-blue-600 text-white px-4 py-2 rounded-lg">
-                        Permitir Câmera
+            <div class="scanner-header">
+                <h2 class="text-xl font-semibold text-center">Scanner de Código de Barras</h2>
+                <p class="instruction-text">Posicione o código dentro do retângulo azul</p>
+            </div>
+            
+            <div id="reader"></div>
+            <div class="scanner-frame">
+                <div class="scanner-line"></div>
+            </div>
+            
+            <div id="scanner-error" class="scanner-error hidden"></div>
+            <div id="scanner-success" class="scanner-success hidden">✓ Código lido com sucesso!</div>
+            
+            <div class="scanner-footer">
+                <div class="scanner-buttons">
+                    <button id="torch-btn" class="scanner-btn" onclick="toggleTorch()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1"/><path d="M6 7h4l2-5h4l2 5h4v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2-5h4l2 5Z"/><path d="M9 17v3"/></svg>
+                        Lanterna
+                    </button>
+                    <button id="flip-btn" class="scanner-btn" onclick="flipCamera()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M15 20H9"/><path d="M12 14v-4"/><path d="M9 10H5"/><path d="M19 10h-4"/><path d="M12 22a10 10 0 1 1 0-20 10 10 0 0 1 0 20Z"/></svg>
+                        Virar
                     </button>
                 </div>
             </div>
-            
-            <div class="scanner-instructions">
-                <p class="font-semibold mb-1">Dicas para melhor leitura:</p>
-                <ul class="list-disc pl-4 space-y-1">
-                    <li>Posicione o código dentro do retângulo azul</li>
-                    <li>Mantenha uma distância de 15-30 cm</li>
-                    <li>Garanta boa iluminação no ambiente</li>
-                    <li>Evite reflexos e sombras no código</li>
-                </ul>
-            </div>
-            
-            <div class="scanner-buttons">
-                <button id="torch-btn" class="torch-btn" onclick="toggleTorch()">
-                    <span class="flex items-center justify-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1"/><path d="M6 7h4l2-5h4l2 5h4v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2-5h4l2 5Z"/><path d="M9 17v3"/></svg>
-                        Lanterna
-                    </span>
-                </button>
-                <button id="flip-btn" class="flip-btn" onclick="flipCamera()">
-                    <span class="flex items-center justify-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M15 20H9"/><path d="M12 14v-4"/><path d="M9 10H5"/><path d="M19 10h-4"/><path d="M12 22a10 10 0 1 1 0-20 10 10 0 0 1 0 20Z"/></svg>
-                        Virar Câmera
-                    </span>
-                </button>
-            </div>
-            
-            <p class="mt-4 text-center text-gray-600 text-sm">A leitura é automática quando o código é detectado.</p>
         </div>
     </div>
 
@@ -230,7 +214,8 @@
         let db, auth, userId = null, isFirebaseReady = false, allMedications = [], currentFilteredList = [], html5QrCode = null;
         let isTorchOn = false;
         let isBackCamera = true;
-        let cameraStream = null;
+        let isScanning = false;
+        let lastScanTime = 0;
 
         async function init() {
             try {
@@ -308,7 +293,11 @@
         }
 
         window.openScannerModal = async function(mode) {
+            if (isScanning) return;
+            
             window.scannerMode = mode;
+            isScanning = true;
+            
             if(mode === 'BUSCA') {
                 document.getElementById('search-input').value = '';
                 applyFilters();
@@ -320,119 +309,114 @@
             document.getElementById('torch-btn').classList.remove('active');
             document.getElementById('flip-btn').classList.remove('active');
             document.getElementById('scanner-error').classList.add('hidden');
-            document.getElementById('camera-permission').classList.add('hidden');
+            document.getElementById('scanner-success').classList.add('hidden');
             
+            // Forçar layout fullscreen
+            document.body.style.overflow = 'hidden';
             document.getElementById('scanner-modal').classList.remove('hidden');
             
             // Limpar o leitor anterior
-            if (html5QrCode && html5QrCode.isScanning) {
+            if (html5QrCode) {
                 try {
                     await html5QrCode.stop();
+                    html5QrCode.clear();
                 } catch (e) {
-                    console.log("Parando scanner anterior...");
+                    console.log("Limpando scanner anterior...");
                 }
             }
             
-            // Verificar permissão da câmera primeiro
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        facingMode: isBackCamera ? "environment" : "user",
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    } 
-                });
-                stream.getTracks().forEach(track => track.stop());
-            } catch (error) {
-                console.error("Erro de permissão da câmera:", error);
-                document.getElementById('camera-permission').classList.remove('hidden');
-                document.getElementById('reader').innerHTML = '';
-                return;
-            }
-            
-            // Iniciar o scanner
-            setTimeout(() => {
-                startScanner();
-            }, 100);
+            // Pequeno delay para garantir que o DOM esteja pronto
+            setTimeout(async () => {
+                try {
+                    await startFullscreenScanner();
+                } catch (error) {
+                    console.error("Erro ao iniciar scanner:", error);
+                    showScannerError("Erro ao iniciar câmera: " + error.message);
+                    isScanning = false;
+                }
+            }, 300);
         };
 
-        async function startScanner() {
+        async function startFullscreenScanner() {
             try {
                 html5QrCode = new Html5Qrcode("reader");
                 
-                // Configurações simplificadas para iPhones
+                // Configuração otimizada para iPhone 12 (tela maior)
                 const config = {
-                    fps: 10, // Reduzido para melhor performance
+                    fps: 30, // Mais FPS para melhor fluidez
                     qrbox: { 
-                        width: 250, 
-                        height: 100
+                        width: 300, 
+                        height: 150 // Área maior para leitura
                     },
-                    aspectRatio: 1.7777778, // 16:9 - padrão para câmeras
-                    disableFlip: false
+                    aspectRatio: 1.0,
+                    disableFlip: false,
+                    formatsToSupport: [
+                        Html5QrcodeSupportedFormats.CODE_128,
+                        Html5QrcodeSupportedFormats.EAN_13,
+                        Html5QrcodeSupportedFormats.EAN_8,
+                        Html5QrcodeSupportedFormats.CODE_39,
+                        Html5QrcodeSupportedFormats.CODE_93,
+                        Html5QrcodeSupportedFormats.UPC_A,
+                        Html5QrcodeSupportedFormats.UPC_E,
+                        Html5QrcodeSupportedFormats.ITF
+                    ],
+                    rememberLastUsedCamera: true,
+                    showTorchButtonIfSupported: true
                 };
 
-                const cameraId = await getCameraId();
-                
+                // Configurações de vídeo otimizadas para iPhones
+                const videoConstraints = {
+                    facingMode: isBackCamera ? "environment" : "user",
+                    width: { min: 640, ideal: 1920, max: 1920 },
+                    height: { min: 480, ideal: 1080, max: 1080 },
+                    frameRate: { ideal: 30, max: 60 }
+                };
+
                 await html5QrCode.start(
-                    cameraId,
+                    videoConstraints,
                     config,
-                    (decodedText) => {
-                        // Sucesso na leitura
-                        handleScanSuccess(decodedText);
-                    },
-                    (errorMessage) => {
-                        // Ignorar mensagens de erro durante a leitura normal
-                        console.log("Scanning:", errorMessage);
-                    }
+                    onScanSuccess,
+                    onScanError
                 ).then(() => {
-                    console.log("Scanner iniciado com sucesso");
-                }).catch(err => {
-                    console.error("Erro ao iniciar scanner:", err);
-                    showScannerError("Não foi possível iniciar a câmera. Tente novamente.");
+                    console.log("Scanner FULLSCREEN iniciado com sucesso");
+                    showScannerMessage("Scanner pronto. Aponte para o código de barras.", "info");
+                }).catch(error => {
+                    console.error("Erro detalhado:", error);
+                    throw error;
                 });
                 
             } catch (error) {
-                console.error("Erro no scanner:", error);
-                showScannerError("Erro ao acessar a câmera: " + error.message);
+                throw error;
             }
         }
 
-        async function getCameraId() {
-            try {
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                const videoDevices = devices.filter(device => device.kind === 'videoinput');
-                
-                if (videoDevices.length === 0) {
-                    throw new Error("Nenhuma câmera encontrada");
-                }
-                
-                // Tentar encontrar a câmera traseira
-                if (isBackCamera) {
-                    const backCameras = videoDevices.filter(device => 
-                        device.label.toLowerCase().includes('back') || 
-                        device.label.toLowerCase().includes('traseira') ||
-                        device.label.toLowerCase().includes('rear')
-                    );
-                    
-                    if (backCameras.length > 0) {
-                        return backCameras[0].deviceId;
-                    }
-                }
-                
-                // Se não encontrar câmera específica, usar a primeira disponível
-                return videoDevices[0].deviceId;
-                
-            } catch (error) {
-                console.log("Usando facingMode como fallback");
-                return {
-                    facingMode: isBackCamera ? "environment" : "user"
-                };
+        function onScanSuccess(decodedText) {
+            // Evitar leituras múltiplas rápidas
+            const now = Date.now();
+            if (now - lastScanTime < 1000) {
+                return; // Ignorar leituras muito próximas
+            }
+            lastScanTime = now;
+            
+            // Mostrar feedback visual
+            showScannerMessage("✓ Código lido!", "success");
+            
+            // Pequeno delay para o usuário ver o feedback
+            setTimeout(() => {
+                handleScannedCode(decodedText);
+            }, 500);
+        }
+
+        function onScanError(errorMessage) {
+            // Ignorar erros comuns durante a leitura
+            if (!errorMessage.includes("NotFoundException") && 
+                !errorMessage.includes("No MultiFormat Readers were able to detect the code")) {
+                console.log("Scan error:", errorMessage);
             }
         }
 
-        function handleScanSuccess(decodedText) {
+        function handleScannedCode(decodedText) {
             closeScannerModal();
-            playSuccessSound();
             
             if(window.scannerMode === 'BUSCA') {
                 document.getElementById('search-input').value = decodedText;
@@ -442,6 +426,26 @@
                 quickLookup(decodedText);
                 showMessage("Código lido com sucesso!", "success");
             }
+            
+            // Vibrar se suportado
+            if (navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+        }
+
+        function showScannerMessage(message, type) {
+            const element = type === "success" ? 
+                document.getElementById('scanner-success') : 
+                document.getElementById('scanner-error');
+            
+            element.textContent = message;
+            element.classList.remove('hidden');
+            
+            if (type === "success") {
+                setTimeout(() => {
+                    element.classList.add('hidden');
+                }, 1000);
+            }
         }
 
         function showScannerError(message) {
@@ -449,11 +453,6 @@
             errorDiv.textContent = message;
             errorDiv.classList.remove('hidden');
         }
-
-        window.requestCameraPermission = function() {
-            document.getElementById('camera-permission').classList.add('hidden');
-            openScannerModal(window.scannerMode);
-        };
 
         window.toggleTorch = async function() {
             if (!html5QrCode) return;
@@ -468,13 +467,19 @@
                     const torchBtn = document.getElementById('torch-btn');
                     torchBtn.classList.toggle('active', isTorchOn);
                     torchBtn.innerHTML = isTorchOn ? 
-                        '<span class="flex items-center justify-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1"/><path d="M6 7h4l2-5h4l2 5h4v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2-5h4l2 5Z"/><path d="M9 17v3"/></svg> Lanterna ON</span>' :
-                        '<span class="flex items-center justify-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1"/><path d="M6 7h4l2-5h4l2 5h4v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2-5h4l2 5Z"/><path d="M9 17v3"/></svg> Lanterna</span>';
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1"/><path d="M6 7h4l2-5h4l2 5h4v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2-5h4l2 5Z"/><path d="M9 17v3"/></svg> Lanterna ON' :
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1"/><path d="M6 7h4l2-5h4l2 5h4v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2-5h4l2 5Z"/><path d="M9 17v3"/></svg> Lanterna';
+                        
+                    showScannerMessage(isTorchOn ? "Lanterna LIGADA" : "Lanterna DESLIGADA", "info");
+                    setTimeout(() => {
+                        document.getElementById('scanner-error').classList.add('hidden');
+                    }, 1500);
                 } else {
-                    showMessage("Lanterna não disponível neste dispositivo", "info");
+                    showScannerMessage("Lanterna não disponível", "info");
                 }
             } catch (error) {
-                console.log("Erro ao controlar lanterna:", error);
+                console.log("Erro na lanterna:", error);
+                showScannerMessage("Erro ao controlar lanterna", "info");
             }
         };
 
@@ -485,40 +490,39 @@
             const flipBtn = document.getElementById('flip-btn');
             flipBtn.classList.toggle('active', !isBackCamera);
             
+            showScannerMessage(`Alternando para câmera ${isBackCamera ? "traseira" : "frontal"}...`, "info");
+            
             // Fechar e reabrir o scanner com a câmera oposta
             html5QrCode.stop().then(() => {
-                const currentMode = window.scannerMode;
-                setTimeout(() => openScannerModal(currentMode), 300);
+                setTimeout(() => {
+                    startFullscreenScanner().catch(error => {
+                        showScannerError("Erro ao alternar câmera: " + error.message);
+                    });
+                }, 500);
             }).catch(() => {
-                const currentMode = window.scannerMode;
-                setTimeout(() => openScannerModal(currentMode), 300);
+                setTimeout(() => {
+                    startFullscreenScanner().catch(error => {
+                        showScannerError("Erro ao alternar câmera: " + error.message);
+                    });
+                }, 500);
             });
         };
 
-        function playSuccessSound() {
-            try {
-                // Som de sucesso simples
-                const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ');
-                audio.play().catch(() => {});
-            } catch (e) {
-                // Ignorar erros de áudio
-            }
-        }
-
         window.closeScannerModal = function() {
-            const modal = document.getElementById('scanner-modal');
-            if (modal) modal.classList.add('hidden');
+            isScanning = false;
+            document.body.style.overflow = 'auto';
+            document.getElementById('scanner-modal').classList.add('hidden');
             
             if (html5QrCode) {
-                html5QrCode.stop().then(() => {
-                    html5QrCode.clear();
-                }).catch(() => {});
-            }
-            
-            // Parar qualquer stream de câmera
-            if (cameraStream) {
-                cameraStream.getTracks().forEach(track => track.stop());
-                cameraStream = null;
+                try {
+                    html5QrCode.stop().then(() => {
+                        html5QrCode.clear();
+                    }).catch(() => {
+                        html5QrCode.clear();
+                    });
+                } catch (e) {
+                    console.log("Erro ao parar scanner:", e);
+                }
             }
         };
 
