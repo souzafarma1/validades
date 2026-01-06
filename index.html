@@ -39,6 +39,12 @@
         .close-scanner { position: absolute; top: 1rem; right: 1rem; background: rgba(0, 0, 0, 0.7); color: white; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; z-index: 20; border: none; cursor: pointer; }
         .scanner-error { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(220, 38, 38, 0.9); color: white; padding: 1rem; border-radius: 8px; z-index: 30; text-align: center; max-width: 80%; }
         .scanner-success { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(34, 197, 94, 0.9); color: white; padding: 1rem; border-radius: 8px; z-index: 30; text-align: center; }
+        
+        /* Estilos para os botões de ação na tabela */
+        .action-buttons { display: flex; gap: 4px; justify-content: flex-end; }
+        .action-btn { padding: 2px 8px; font-size: 11px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+        .edit-btn { background: #3b82f6; color: white; border: none; }
+        .delete-btn { background: #ef4444; color: white; border: none; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -272,15 +278,17 @@
                 const row = document.createElement('tr');
                 row.className = `hover:bg-gray-50 ${bg} border-b`;
                 row.innerHTML = `
-                    <td class="px-2 py-1 hidden sm:table-cell">${m.barcode}</td>
-                    <td class="px-2 py-1">${m.internalCode}</td>
-                    <td class="px-2 py-1 font-medium ${text}">${m.description}</td>
-                    <td class="px-2 py-1 hidden sm:table-cell">${m.laboratory}</td>
+                    <td class="px-2 py-1 hidden sm:table-cell">${m.barcode || ''}</td>
+                    <td class="px-2 py-1">${m.internalCode || ''}</td>
+                    <td class="px-2 py-1 font-medium ${text}">${m.description || ''}</td>
+                    <td class="px-2 py-1 hidden sm:table-cell">${m.laboratory || ''}</td>
                     <td class="px-2 py-1 font-bold">${m.expirationDate ? m.expirationDate.split('-').reverse().join('/') : '---'}</td>
-                    <td class="px-2 py-1">${m.quantity}</td>
-                    <td class="px-2 py-1 text-right no-print">
-                        <button onclick="loadForEdit('${m.id}')" class="text-blue-600 hover:underline mr-2">Editar</button>
-                        <button onclick="deleteMedication('${m.id}')" class="text-red-600 hover:underline">Exc</button>
+                    <td class="px-2 py-1">${m.quantity || 0}</td>
+                    <td class="px-2 py-1 no-print">
+                        <div class="action-buttons">
+                            <button onclick="loadForEdit('${m.id}')" class="action-btn edit-btn">Editar</button>
+                            <button onclick="deleteMedication('${m.id}')" class="action-btn delete-btn">Exc</button>
+                        </div>
                     </td>`;
                 list.appendChild(row);
             });
@@ -292,6 +300,78 @@
             const [y2, m2] = d2.split('-').map(Number);
             return (y1 - y2) * 12 + (m1 - m2);
         }
+
+        // Função para carregar dados para edição
+        window.loadForEdit = function(id) {
+            const medication = allMedications.find(m => m.id === id);
+            if (!medication) {
+                showMessage("Produto não encontrado", "error");
+                return;
+            }
+
+            // Preencher formulário
+            document.getElementById('doc-id').value = medication.id;
+            document.getElementById('barcode').value = medication.barcode || '';
+            document.getElementById('internalCode').value = medication.internalCode || '';
+            document.getElementById('description').value = medication.description || '';
+            document.getElementById('laboratory').value = medication.laboratory || '';
+            document.getElementById('quantity').value = medication.quantity || 1;
+            
+            // Formatar data para input type="month"
+            if (medication.expirationDate) {
+                const [year, month] = medication.expirationDate.split('-');
+                document.getElementById('expirationDate').value = `${year}-${month.padStart(2, '0')}`;
+            } else {
+                document.getElementById('expirationDate').value = '';
+            }
+            
+            // Atualizar título do formulário
+            document.getElementById('form-title').textContent = 'Editar Produto';
+            document.getElementById('submit-button').textContent = 'Atualizar';
+            
+            // Abrir modal
+            document.getElementById('medication-modal').classList.remove('hidden');
+        };
+
+        // Função para resetar formulário
+        function resetForm() {
+            document.getElementById('medication-form').reset();
+            document.getElementById('doc-id').value = '';
+            document.getElementById('form-title').textContent = 'Cadastrar Novo Produto';
+            document.getElementById('submit-button').textContent = 'Salvar';
+        }
+
+        // Configurar envio do formulário
+        document.getElementById('medication-form')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('doc-id').value;
+            const medicationData = {
+                barcode: document.getElementById('barcode').value.trim(),
+                internalCode: document.getElementById('internalCode').value.trim(),
+                description: document.getElementById('description').value.trim(),
+                laboratory: document.getElementById('laboratory').value.trim(),
+                quantity: parseInt(document.getElementById('quantity').value) || 1,
+                expirationDate: document.getElementById('expirationDate').value
+            };
+            
+            try {
+                if (id) {
+                    // Atualizar existente
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id), medicationData);
+                    showMessage("Produto atualizado com sucesso!", "success");
+                } else {
+                    // Criar novo
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), medicationData);
+                    showMessage("Produto cadastrado com sucesso!", "success");
+                }
+                
+                closeModal();
+            } catch (error) {
+                console.error("Erro ao salvar:", error);
+                showMessage("Erro ao salvar produto: " + error.message, "error");
+            }
+        });
 
         window.openScannerModal = function(mode) {
             scannerMode = mode;
@@ -517,13 +597,25 @@
             cleanupScanner();
         };
 
-        window.openCadastroModal = () => document.getElementById('medication-modal').classList.remove('hidden');
-        window.closeModal = () => { document.getElementById('medication-modal').classList.add('hidden'); resetForm(); };
+        window.openCadastroModal = () => {
+            resetForm();
+            document.getElementById('medication-modal').classList.remove('hidden');
+        };
+        
+        window.closeModal = () => { 
+            document.getElementById('medication-modal').classList.add('hidden'); 
+            resetForm(); 
+        };
         
         window.deleteMedication = async (id) => { 
-            if(confirm('Excluir este lote?')) {
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id)); 
-                showMessage("Lote removido.");
+            if(confirm('Tem certeza que deseja excluir este lote?')) {
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id)); 
+                    showMessage("Lote removido com sucesso.", "success");
+                } catch (error) {
+                    console.error("Erro ao excluir:", error);
+                    showMessage("Erro ao excluir lote: " + error.message, "error");
+                }
             }
         };
 
