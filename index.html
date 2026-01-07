@@ -6,7 +6,7 @@
     <title>Souza Farma - Controle de Validade (Produção)</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Barcode Scanner Library - Versão estável -->
+    <!-- Barcode Scanner Library -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <!-- Google Font - Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -17,84 +17,11 @@
         input[type="month"] { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
         #expirationDate, #expiration-filter { padding: 6px; line-height: normal; }
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 50; }
-        .modal-content { background-color: white; padding: 1rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); max-width: 95%; width: 95%; max-height: 90vh; overflow-y: auto; position: relative; }
+        .modal-content { background-color: white; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); max-width: 90%; width: 500px; max-height: 90vh; overflow-y: auto; position: relative; }
         .logo-img { max-width: 100%; height: auto; margin: 0 auto 1.5rem; display: block; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-        #scanner-modal .modal-content { max-width: 100%; width: 100%; height: 100%; border-radius: 0; padding: 0; background: #000; }
+        #scanner-modal .modal-content { max-width: 95%; width: 600px; }
         @media (max-width: 640px) { .sm\:table-cell { display: none !important; } }
         @media print { .no-print { display: none !important; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 10pt; } }
-        
-        /* Estilos SIMPLES e FUNCIONAIS para o scanner */
-        #scanner-modal .modal-content { position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100% !important; height: 100% !important; max-width: 100% !important; max-height: 100% !important; }
-        #reader { width: 100% !important; height: 100% !important; position: relative; }
-        #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
-        .scanner-container { position: relative; width: 100%; height: 100%; }
-        .scanner-header { position: absolute; top: 0; left: 0; right: 0; background: rgba(0, 0, 0, 0.8); color: white; padding: 1rem; z-index: 10; text-align: center; }
-        .scanner-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; height: 150px; border: 4px solid rgba(59, 130, 246, 0.8); border-radius: 12px; pointer-events: none; z-index: 2; }
-        .scanner-line { position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 1), transparent); animation: scan 2s ease-in-out infinite; }
-        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
-        .scanner-footer { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0, 0, 0, 0.8); color: white; padding: 1rem; z-index: 10; }
-        .scanner-buttons { display: flex; gap: 1rem; justify-content: center; }
-        .scanner-btn { background: rgba(255, 255, 255, 0.2); border: none; color: white; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
-        .scanner-btn.active { background: rgba(59, 130, 246, 0.7); }
-        .close-scanner { position: absolute; top: 1rem; right: 1rem; background: rgba(0, 0, 0, 0.7); color: white; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; z-index: 20; border: none; cursor: pointer; }
-        .scanner-error { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(220, 38, 38, 0.9); color: white; padding: 1rem; border-radius: 8px; z-index: 30; text-align: center; max-width: 80%; }
-        .scanner-success { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(34, 197, 94, 0.9); color: white; padding: 1rem; border-radius: 8px; z-index: 30; text-align: center; }
-        
-        /* Estilos para os botões de ação na tabela */
-        .action-buttons { display: flex; gap: 4px; justify-content: flex-end; }
-        .action-btn { padding: 2px 8px; font-size: 11px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
-        .edit-btn { background: #3b82f6; color: white; border: none; }
-        .delete-btn { background: #ef4444; color: white; border: none; }
-        
-        /* Estilos para o modal de importação */
-        #import-modal .modal-content, #import-lotes-modal .modal-content {
-            max-width: 500px;
-            width: 90%;
-        }
-        .drop-area {
-            border: 3px dashed #d1d5db;
-            border-radius: 0.5rem;
-            padding: 2rem;
-            text-align: center;
-            background-color: #f9fafb;
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-        .drop-area:hover, .drop-area.dragover {
-            border-color: #3b82f6;
-            background-color: #eff6ff;
-        }
-        .file-input {
-            display: none;
-        }
-        .file-label {
-            display: inline-block;
-            background-color: #3b82f6;
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 0.375rem;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .file-label:hover {
-            background-color: #2563eb;
-        }
-        .file-name {
-            margin-top: 0.5rem;
-            font-size: 0.875rem;
-            color: #6b7280;
-            word-break: break-all;
-        }
-        .template-download {
-            display: inline-block;
-            margin-top: 1rem;
-            color: #3b82f6;
-            text-decoration: underline;
-            cursor: pointer;
-        }
-        .template-download:hover {
-            color: #2563eb;
-        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -169,7 +96,6 @@
                         </div>
                     </div>
 
-                    <!-- Legenda de Cores Recalocada -->
                     <div class="flex flex-wrap text-xs mb-4 p-3 bg-gray-50 rounded-lg border no-print">
                         <span class="mr-4 flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-red-400 mr-1 border border-red-600"></span> Vencido/Mês Atual (0)</span>
                         <span class="mr-4 flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-yellow-200 mr-1 border border-yellow-400"></span> Vence em 1 Mês</span>
@@ -189,7 +115,7 @@
                                     <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Cód. Barras</th>
                                     <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cód. Interno</th>
                                     <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Descrição</th>
-                                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Laboratório</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Laboratório</th>
                                     <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Validade</th>
                                     <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Qtd</th>
                                     <th class="px-2 py-2 text-right text-xs font-medium text-gray-500 uppercase no-print">Ações</th>
@@ -205,7 +131,7 @@
         </div>
     </div>
 
-    <!-- Modal Cadastro Produto -->
+    <!-- Modais -->
     <div id="medication-modal" class="modal-overlay hidden no-print">
         <div class="modal-content">
             <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="closeModal()"> &times; </button>
@@ -225,116 +151,50 @@
         </div>
     </div>
 
-    <!-- Modal Importar Produtos Iniciais -->
     <div id="import-modal" class="modal-overlay hidden no-print">
         <div class="modal-content">
             <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="closeImportModal()"> &times; </button>
-            <h2 class="text-2xl font-semibold mb-6 text-purple-700">Importar Produtos (Inicial)</h2>
-            <div class="mb-4">
-                <p class="text-gray-600 mb-3">Faça o upload de um arquivo CSV com os produtos iniciais. O arquivo deve conter as colunas:</p>
-                <p class="text-sm bg-gray-100 p-2 rounded mb-3"><code>Cód. Barras, Cód. Interno, Descrição, Laboratório</code></p>
-                <p class="text-sm text-gray-500 mb-4">Quantidade e validade serão definidas posteriormente.</p>
-                
-                <a href="#" class="template-download" onclick="downloadTemplate('produtos')">📥 Baixar modelo CSV</a>
+            <h2 class="text-2xl font-semibold mb-6 text-purple-700">Importação Inicial</h2>
+            <div class="mb-4"> <label class="block text-sm font-medium text-gray-700 mb-1">Arquivo CSV/TSV:</label> <input type="file" id="bulk-file-input" accept=".csv, .tsv" class="w-full p-2 border border-gray-300 rounded-lg"> </div>
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Separador:</label>
+                <select id="delimiter-select" class="w-full p-2 border border-gray-300 rounded-lg"><option value=";">Ponto e Vírgula (;)</option><option value=",">Vírgula (,)</option><option value="\t">Tabulação (TSV)</option></select>
             </div>
-            
-            <div class="drop-area" id="drop-area-import" onclick="document.getElementById('file-input-import').click()">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-                <p class="text-lg font-medium">Arraste e solte o arquivo aqui</p>
-                <p class="text-gray-500">ou clique para selecionar</p>
-                <input type="file" id="file-input-import" class="file-input" accept=".csv, .txt" onchange="handleFileSelect(this, 'import')">
-            </div>
-            <div id="file-name-import" class="file-name"></div>
-            
-            <div class="mt-6">
-                <button onclick="processImportFile()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md">Importar Produtos</button>
-            </div>
+            <button onclick="handleBulkImport()" class="w-full bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg">Importar</button>
         </div>
     </div>
 
-    <!-- Modal Atualizar Lotes -->
     <div id="import-lotes-modal" class="modal-overlay hidden no-print">
         <div class="modal-content">
             <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="closeImportLotesModal()"> &times; </button>
             <h2 class="text-2xl font-semibold mb-6 text-orange-700">Atualizar Lotes (Excel)</h2>
-            <div class="mb-4">
-                <p class="text-gray-600 mb-3">Faça o upload de um arquivo CSV com os lotes. O arquivo deve conter as colunas:</p>
-                <p class="text-sm bg-gray-100 p-2 rounded mb-3"><code>Cód. Interno, Lote, Validade (AAAA-MM), Quantidade</code></p>
-                <p class="text-sm text-gray-500 mb-4">A data deve estar no formato AAAA-MM (ex: 2024-12)</p>
-                
-                <a href="#" class="template-download" onclick="downloadTemplate('lotes')">📥 Baixar modelo CSV</a>
+            <div class="mb-4"> <label class="block text-sm font-medium text-gray-700 mb-1">Arquivo CSV/TSV:</label> <input type="file" id="bulk-lotes-file-input" accept=".csv, .tsv" class="w-full p-2 border border-gray-300 rounded-lg"> </div>
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Separador:</label>
+                <select id="delimiter-lotes-select" class="w-full p-2 border border-gray-300 rounded-lg"><option value=";">Ponto e Vírgula (;)</option><option value=",">Vírgula (,)</option><option value="\t">Tabulação (TSV)</option></select>
             </div>
-            
-            <div class="drop-area" id="drop-area-lotes" onclick="document.getElementById('file-input-lotes').click()">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <p class="text-lg font-medium">Arraste e solte o arquivo Excel/CSV aqui</p>
-                <p class="text-gray-500">ou clique para selecionar</p>
-                <input type="file" id="file-input-lotes" class="file-input" accept=".csv, .txt, .xlsx, .xls" onchange="handleFileSelect(this, 'lotes')">
-            </div>
-            <div id="file-name-lotes" class="file-name"></div>
-            
-            <div class="mt-6">
-                <button onclick="processLotesFile()" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md">Processar Lotes</button>
-            </div>
+            <button onclick="handleBulkLotesImport()" class="w-full bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg">Atualizar</button>
         </div>
     </div>
 
-    <!-- Modal do Scanner - VERSÃO SIMPLIFICADA -->
     <div id="scanner-modal" class="modal-overlay hidden no-print">
-        <div class="scanner-container">
-            <button class="close-scanner" onclick="closeScannerModal()"> &times; </button>
-            
-            <div class="scanner-header">
-                <h2 class="text-xl font-semibold">Scanner de Código de Barras</h2>
-                <p class="text-sm mt-1">Posicione o código dentro do retângulo azul</p>
-            </div>
-            
+        <div class="modal-content">
+            <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="closeScannerModal()"> &times; </button>
+            <h2 class="text-xl font-semibold mb-4 text-blue-700">Scanner</h2>
             <div id="reader"></div>
-            <div class="scanner-frame">
-                <div class="scanner-line"></div>
-            </div>
-            
-            <div id="scanner-error" class="scanner-error hidden"></div>
-            <div id="scanner-success" class="scanner-success hidden">✓ Código lido com sucesso!</div>
-            
-            <div class="scanner-footer">
-                <div class="scanner-buttons">
-                    <button id="torch-btn" class="scanner-btn" onclick="toggleTorch()">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1"/><path d="M6 7h4l2-5h4l2 5h4v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2-5h4l2 5Z"/><path d="M9 17v3"/></svg>
-                        Lanterna
-                    </button>
-                    <button id="flip-btn" class="scanner-btn" onclick="flipCamera()">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M15 20H9"/><path d="M12 14v-4"/><path d="M9 10H5"/><path d="M19 10h-4"/><path d="M12 22a10 10 0 1 1 0-20 10 10 0 0 1 0 20Z"/></svg>
-                        Virar
-                    </button>
-                </div>
-            </div>
+            <p class="mt-4 text-center text-gray-600 text-sm">Posicione o código no centro.</p>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, addDoc, onSnapshot, collection, query, deleteDoc, updateDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, addDoc, onSnapshot, collection, query, deleteDoc, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const APP_CONFIG = { apiKey: "AIzaSyDc9-jix-tXCV8JHzivDR8pY1iCNNJeDPg", authDomain: "controle-de-validade-e708a.firebaseapp.com", projectId: "controle-de-validade-e708a", storageBucket: "controle-de-validade-e708a.firebasestorage.app", messagingSenderId: "300173058270", appId: "1:300173058270:web:970549624a4c46af3d624f" };
         const appId = typeof __app_id !== 'undefined' ? __app_id : "controle-de-validade-e708a";
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        let db, auth, userId = null, isFirebaseReady = false, allMedications = [], currentFilteredList = [];
-        
-        // Variáveis do scanner
-        let scannerInstance = null;
-        let isScannerRunning = false;
-        let isBackCamera = true;
-        let scannerMode = '';
-        
-        // Variáveis para importação
-        let selectedFile = null;
-        let importType = '';
+        let db, auth, userId = null, isFirebaseReady = false, allMedications = [], currentFilteredList = [], html5QrCode = null;
 
         async function init() {
             try {
@@ -360,11 +220,19 @@
             applyFilters();
         }
 
+        // LIGAÇÃO DAS FUNÇÕES AO WINDOW (Essencial para botões onclick funcionarem)
+        window.openCadastroModal = () => document.getElementById('medication-modal').classList.remove('hidden');
+        window.closeModal = () => { document.getElementById('medication-modal').classList.add('hidden'); resetForm(); };
+        window.openImportModal = () => document.getElementById('import-modal').classList.remove('hidden');
+        window.closeImportModal = () => document.getElementById('import-modal').classList.add('hidden');
+        window.openImportLotesModal = () => document.getElementById('import-lotes-modal').classList.remove('hidden');
+        window.closeImportLotesModal = () => document.getElementById('import-lotes-modal').classList.add('hidden');
+
         window.applyFilters = function() {
             const term = document.getElementById('search-input').value.toLowerCase().trim();
             const exp = document.getElementById('expiration-filter').value;
             let filtered = allMedications;
-            if (term) filtered = filtered.filter(m => (m.barcode + m.internalCode + m.description).toLowerCase().includes(term));
+            if (term) filtered = filtered.filter(m => (m.barcode + (m.internalCode||'') + m.description).toLowerCase().includes(term));
             if (exp) filtered = filtered.filter(m => m.expirationDate === exp);
             renderMedications(filtered);
         };
@@ -378,30 +246,16 @@
             const list = document.getElementById('medication-list');
             list.innerHTML = meds.length ? '' : '<tr><td colspan="7" class="p-4 text-center">Nenhum item encontrado.</td></tr>';
             const curMonth = new Date().toISOString().slice(0, 7);
-            
             meds.forEach(m => {
                 const diff = m.expirationDate ? monthDiff(m.expirationDate, curMonth) : -1;
                 let bg = 'bg-white', text = 'text-gray-700';
-                if (diff <= 0 && m.expirationDate) { bg = 'bg-red-100'; text = 'text-red-800 font-bold'; }
-                else if (diff === 1) { bg = 'bg-yellow-100'; text = 'text-yellow-800 font-bold'; }
-                else if (diff === 2) { bg = 'bg-orange-50'; text = 'text-orange-800'; }
-                else if (diff === 3) { bg = 'bg-green-50'; text = 'text-green-800'; }
-
+                if (diff <= 0 && m.expirationDate) { bg = 'bg-red-400'; text = 'text-white font-bold'; }
+                else if (diff === 1) { bg = 'bg-yellow-200'; text = 'text-yellow-900 font-bold'; }
+                else if (diff === 2) { bg = 'bg-orange-100'; text = 'text-orange-900'; }
+                else if (diff === 3) { bg = 'bg-green-100'; text = 'text-green-900'; }
                 const row = document.createElement('tr');
                 row.className = `hover:bg-gray-50 ${bg} border-b`;
-                row.innerHTML = `
-                    <td class="px-2 py-1 hidden sm:table-cell">${m.barcode || ''}</td>
-                    <td class="px-2 py-1">${m.internalCode || ''}</td>
-                    <td class="px-2 py-1 font-medium ${text}">${m.description || ''}</td>
-                    <td class="px-2 py-1 hidden sm:table-cell">${m.laboratory || ''}</td>
-                    <td class="px-2 py-1 font-bold">${m.expirationDate ? m.expirationDate.split('-').reverse().join('/') : '---'}</td>
-                    <td class="px-2 py-1">${m.quantity || 0}</td>
-                    <td class="px-2 py-1 no-print">
-                        <div class="action-buttons">
-                            <button onclick="loadForEdit('${m.id}')" class="action-btn edit-btn">Editar</button>
-                            <button onclick="deleteMedication('${m.id}')" class="action-btn delete-btn">Exc</button>
-                        </div>
-                    </td>`;
+                row.innerHTML = `<td class="px-2 py-1 hidden sm:table-cell">${m.barcode}</td><td class="px-2 py-1">${m.internalCode}</td><td class="px-2 py-1 font-medium ${text}">${m.description}</td><td class="px-2 py-1 hidden sm:table-cell">${m.laboratory}</td><td class="px-2 py-1 font-bold">${m.expirationDate ? m.expirationDate.split('-').reverse().join('/') : '---'}</td><td class="px-2 py-1">${m.quantity}</td><td class="px-2 py-1 text-right no-print"><button onclick="loadForEdit('${m.id}')" class="text-blue-600 hover:underline mr-2">Editar</button><button onclick="deleteMedication('${m.id}')" class="text-red-600 hover:underline">Exc</button></td>`;
                 list.appendChild(row);
             });
             currentFilteredList = meds;
@@ -413,617 +267,79 @@
             return (y1 - y2) * 12 + (m1 - m2);
         }
 
-        // Função para carregar dados para edição
-        window.loadForEdit = function(id) {
-            const medication = allMedications.find(m => m.id === id);
-            if (!medication) {
-                showMessage("Produto não encontrado", "error");
-                return;
-            }
-
-            // Preencher formulário
-            document.getElementById('doc-id').value = medication.id;
-            document.getElementById('barcode').value = medication.barcode || '';
-            document.getElementById('internalCode').value = medication.internalCode || '';
-            document.getElementById('description').value = medication.description || '';
-            document.getElementById('laboratory').value = medication.laboratory || '';
-            document.getElementById('quantity').value = medication.quantity || 1;
-            
-            // Formatar data para input type="month"
-            if (medication.expirationDate) {
-                const [year, month] = medication.expirationDate.split('-');
-                document.getElementById('expirationDate').value = `${year}-${month.padStart(2, '0')}`;
-            } else {
-                document.getElementById('expirationDate').value = '';
-            }
-            
-            // Atualizar título do formulário
-            document.getElementById('form-title').textContent = 'Editar Produto';
-            document.getElementById('submit-button').textContent = 'Atualizar';
-            
-            // Abrir modal
-            document.getElementById('medication-modal').classList.remove('hidden');
-        };
-
-        // Função para resetar formulário
-        function resetForm() {
-            document.getElementById('medication-form').reset();
-            document.getElementById('doc-id').value = '';
-            document.getElementById('form-title').textContent = 'Cadastrar Novo Produto';
-            document.getElementById('submit-button').textContent = 'Salvar';
-        }
-
-        // Configurar envio do formulário
-        document.getElementById('medication-form')?.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const id = document.getElementById('doc-id').value;
-            const medicationData = {
-                barcode: document.getElementById('barcode').value.trim(),
-                internalCode: document.getElementById('internalCode').value.trim(),
-                description: document.getElementById('description').value.trim(),
-                laboratory: document.getElementById('laboratory').value.trim(),
-                quantity: parseInt(document.getElementById('quantity').value) || 1,
-                expirationDate: document.getElementById('expirationDate').value
-            };
-            
-            try {
-                if (id) {
-                    // Atualizar existente
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id), medicationData);
-                    showMessage("Produto atualizado com sucesso!", "success");
-                } else {
-                    // Criar novo
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), medicationData);
-                    showMessage("Produto cadastrado com sucesso!", "success");
-                }
-                
-                closeModal();
-            } catch (error) {
-                console.error("Erro ao salvar:", error);
-                showMessage("Erro ao salvar produto: " + error.message, "error");
-            }
-        });
-
-        // ====================================
-        // FUNÇÕES PARA OS BOTÕES CORRIGIDOS
-        // ====================================
-
-        // 1. Botão "Importar Produtos (Inicial)"
-        window.openImportModal = function() {
-            importType = 'produtos';
-            document.getElementById('import-modal').classList.remove('hidden');
-            setupDragAndDrop('import');
-        };
-
-        window.closeImportModal = function() {
-            document.getElementById('import-modal').classList.add('hidden');
-            resetImportForm();
-        };
-
-        // 2. Botão "Atualizar Lotes (Excel)"
-        window.openImportLotesModal = function() {
-            importType = 'lotes';
-            document.getElementById('import-lotes-modal').classList.remove('hidden');
-            setupDragAndDrop('lotes');
-        };
-
-        window.closeImportLotesModal = function() {
-            document.getElementById('import-lotes-modal').classList.add('hidden');
-            resetImportForm();
-        };
-
-        // 3. Botão "Limpar Inventário"
-        window.confirmDeleteAll = function() {
-            if (confirm('⚠️ ATENÇÃO: Esta ação irá REMOVER TODOS os produtos do inventário. Esta ação NÃO pode ser desfeita.\n\nDeseja continuar?')) {
-                deleteAllMedications();
-            }
-        };
-
-        // Função para configurar drag and drop
-        function setupDragAndDrop(type) {
-            const dropArea = document.getElementById(`drop-area-${type}`);
-            const fileInput = document.getElementById(`file-input-${type}`);
-            const fileNameDisplay = document.getElementById(`file-name-${type}`);
-            
-            if (!dropArea) return;
-            
-            // Prevent default drag behaviors
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                dropArea.addEventListener(eventName, preventDefaults, false);
-            });
-            
-            // Highlight drop area when item is dragged over it
-            ['dragenter', 'dragover'].forEach(eventName => {
-                dropArea.addEventListener(eventName, highlight, false);
-            });
-            
-            ['dragleave', 'drop'].forEach(eventName => {
-                dropArea.addEventListener(eventName, unhighlight, false);
-            });
-            
-            // Handle dropped files
-            dropArea.addEventListener('drop', handleDrop, false);
-            
-            function preventDefaults(e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-            
-            function highlight() {
-                dropArea.classList.add('dragover');
-            }
-            
-            function unhighlight() {
-                dropArea.classList.remove('dragover');
-            }
-            
-            function handleDrop(e) {
-                const dt = e.dataTransfer;
-                const files = dt.files;
-                if (files.length) {
-                    handleFileSelect({ files: files }, type);
-                }
-            }
-        }
-
-        window.handleFileSelect = function(input, type) {
-            const files = input.files;
-            if (!files || files.length === 0) return;
-            
-            selectedFile = files[0];
-            const fileNameDisplay = document.getElementById(`file-name-${type}`);
-            
-            if (fileNameDisplay) {
-                fileNameDisplay.textContent = `Arquivo selecionado: ${selectedFile.name} (${(selectedFile.size / 1024).toFixed(2)} KB)`;
-                fileNameDisplay.style.color = '#10b981';
-            }
-            
-            importType = type;
-        };
-
-        function resetImportForm() {
-            selectedFile = null;
-            importType = '';
-            document.getElementById('file-name-import').textContent = '';
-            document.getElementById('file-name-lotes').textContent = '';
-        }
-
-        window.downloadTemplate = function(type) {
-            let csvContent = '';
-            let fileName = '';
-            
-            if (type === 'produtos') {
-                csvContent = "Cód. Barras,Cód. Interno,Descrição,Laboratório\n7891234567890,PROD001,Paracetamol 500mg,MedLab\n7891234567891,PROD002,Dipirona 500mg,PharmaCorp";
-                fileName = 'modelo_produtos.csv';
-            } else if (type === 'lotes') {
-                csvContent = "Cód. Interno,Lote,Validade,Quantidade\nPROD001,LOTE-001,2024-12,100\nPROD002,LOTE-002,2024-11,50";
-                fileName = 'modelo_lotes.csv';
-            }
-            
-            const blob = new Blob(["\uFEFF", csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = fileName;
-            link.click();
-            
-            showMessage(`Modelo ${fileName} baixado com sucesso!`, "success");
-        };
-
-        window.processImportFile = async function() {
-            if (!selectedFile) {
-                showMessage("Por favor, selecione um arquivo primeiro.", "error");
-                return;
-            }
-            
-            try {
-                const text = await selectedFile.text();
-                const lines = text.split('\n').filter(line => line.trim() !== '');
-                
-                if (lines.length < 2) {
-                    showMessage("O arquivo está vazio ou não contém dados válidos.", "error");
-                    return;
-                }
-                
-                const headers = lines[0].split(',').map(h => h.trim());
-                
-                if (importType === 'produtos') {
-                    await importProducts(lines, headers);
-                } else {
-                    showMessage("Tipo de importação não reconhecido.", "error");
-                }
-                
-            } catch (error) {
-                console.error("Erro ao processar arquivo:", error);
-                showMessage("Erro ao processar arquivo: " + error.message, "error");
-            }
-        };
-
-        window.processLotesFile = async function() {
-            if (!selectedFile) {
-                showMessage("Por favor, selecione um arquivo primeiro.", "error");
-                return;
-            }
-            
-            try {
-                const text = await selectedFile.text();
-                const lines = text.split('\n').filter(line => line.trim() !== '');
-                
-                if (lines.length < 2) {
-                    showMessage("O arquivo está vazio ou não contém dados válidos.", "error");
-                    return;
-                }
-                
-                const headers = lines[0].split(',').map(h => h.trim());
-                await updateLotes(lines, headers);
-                
-            } catch (error) {
-                console.error("Erro ao processar arquivo:", error);
-                showMessage("Erro ao processar arquivo: " + error.message, "error");
-            }
-        };
-
-        async function importProducts(lines, headers) {
-            const batch = writeBatch(db);
-            const produtosCollection = collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos');
-            
-            let importedCount = 0;
-            
-            // Processar a partir da linha 1 (ignorar cabeçalho)
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i];
-                if (!line.trim()) continue;
-                
-                const values = line.split(',').map(v => v.trim());
-                
-                // Verificar se temos dados suficientes
-                if (values.length < 4) continue;
-                
-                // Criar objeto do produto
-                const produto = {
-                    barcode: values[0] || '',
-                    internalCode: values[1] || '',
-                    description: values[2] || '',
-                    laboratory: values[3] || '',
-                    quantity: 0, // Inicialmente zero
-                    expirationDate: '' // Sem data inicial
-                };
-                
-                // Adicionar ao batch
-                const docRef = doc(produtosCollection);
-                batch.set(docRef, produto);
-                importedCount++;
-            }
-            
-            // Executar batch
-            await batch.commit();
-            closeImportModal();
-            showMessage(`${importedCount} produtos importados com sucesso!`, "success");
-        }
-
-        async function updateLotes(lines, headers) {
-            let updatedCount = 0;
-            let notFoundCount = 0;
-            
-            // Processar a partir da linha 1 (ignorar cabeçalho)
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i];
-                if (!line.trim()) continue;
-                
-                const values = line.split(',').map(v => v.trim());
-                
-                // Verificar se temos dados suficientes
-                if (values.length < 4) continue;
-                
-                const internalCode = values[0];
-                const lote = values[1];
-                const validade = values[2];
-                const quantidade = parseInt(values[3]) || 0;
-                
-                // Procurar produto pelo código interno
-                const produto = allMedications.find(m => m.internalCode === internalCode);
-                
-                if (produto) {
-                    try {
-                        // Atualizar produto existente
-                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', produto.id), {
-                            quantity: quantidade,
-                            expirationDate: validade,
-                            lote: lote
-                        });
-                        updatedCount++;
-                    } catch (error) {
-                        console.error(`Erro ao atualizar produto ${internalCode}:`, error);
-                    }
-                } else {
-                    notFoundCount++;
-                    console.log(`Produto não encontrado: ${internalCode}`);
-                }
-            }
-            
-            closeImportLotesModal();
-            
-            if (updatedCount > 0) {
-                showMessage(`${updatedCount} lotes atualizados com sucesso!`, "success");
-            }
-            
-            if (notFoundCount > 0) {
-                showMessage(`${notFoundCount} produtos não encontrados no sistema.`, "warning");
-            }
-        }
-
-        async function deleteAllMedications() {
-            try {
-                // Obter todos os documentos
-                const querySnapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'));
-                
-                if (querySnapshot.empty) {
-                    showMessage("O inventário já está vazio.", "info");
-                    return;
-                }
-                
-                // Usar batch para deletar todos
-                const batch = writeBatch(db);
-                querySnapshot.forEach((docSnapshot) => {
-                    batch.delete(docSnapshot.ref);
-                });
-                
-                await batch.commit();
-                showMessage("Inventário limpo com sucesso!", "success");
-                
-            } catch (error) {
-                console.error("Erro ao limpar inventário:", error);
-                showMessage("Erro ao limpar inventário: " + error.message, "error");
-            }
-        }
-
-        // ====================================
-        // FUNÇÕES DO SCANNER (mantidas do código original)
-        // ====================================
-
         window.openScannerModal = function(mode) {
-            scannerMode = mode;
-            
+            window.scannerMode = mode;
+            // LIMPEZA AUTOMÁTICA: Se for modo busca, limpa o campo antes de começar
             if(mode === 'BUSCA') {
                 document.getElementById('search-input').value = '';
                 applyFilters();
             }
-            
-            // Resetar interface
-            document.getElementById('scanner-error').classList.add('hidden');
-            document.getElementById('scanner-success').classList.add('hidden');
-            document.getElementById('torch-btn').classList.remove('active');
-            
-            // Abrir modal
-            document.body.style.overflow = 'hidden';
             document.getElementById('scanner-modal').classList.remove('hidden');
-            
-            // Iniciar scanner com delay para garantir que o DOM esteja pronto
-            setTimeout(() => {
-                startCamera();
-            }, 500);
-        };
-
-        async function startCamera() {
-            // Limpar qualquer scanner anterior
-            await cleanupScanner();
-            
-            try {
-                // Verificar permissão da câmera
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        facingMode: isBackCamera ? "environment" : "user"
-                    } 
-                });
-                
-                // Parar stream de teste
-                stream.getTracks().forEach(track => track.stop());
-                
-                // Iniciar scanner
-                initScanner();
-                
-            } catch (error) {
-                console.error("Erro na câmera:", error);
-                showScannerError(getCameraErrorMessage(error));
-            }
-        }
-
-        function initScanner() {
-            try {
-                // Criar nova instância do scanner
-                scannerInstance = new Html5Qrcode("reader");
-                isScannerRunning = true;
-                
-                // Configuração MÍNIMA - sem qrbox para evitar conflitos
-                const config = {
-                    fps: 10,
-                    qrbox: undefined, // Deixar a biblioteca detectar automaticamente
-                    aspectRatio: 1.0,
-                    disableFlip: false
-                };
-                
-                console.log("Iniciando scanner com câmera:", isBackCamera ? "traseira" : "frontal");
-                
-                scannerInstance.start(
-                    { facingMode: isBackCamera ? "environment" : "user" },
-                    config,
-                    onQrCodeSuccess,
-                    onQrCodeError
-                ).then(() => {
-                    console.log("Scanner iniciado com sucesso");
-                }).catch(error => {
-                    console.error("Erro ao iniciar scanner:", error);
-                    // Tentar método alternativo sem config
-                    tryAlternativeScanner();
-                });
-                
-            } catch (error) {
-                console.error("Erro na inicialização:", error);
-                showScannerError("Erro ao iniciar o scanner: " + (error.message || error));
-            }
-        }
-
-        function tryAlternativeScanner() {
-            if (!scannerInstance || !isScannerRunning) return;
-            
-            try {
-                // Tentar método ainda mais simples
-                scannerInstance.start(
-                    { facingMode: isBackCamera ? "environment" : "user" },
-                    undefined, // Sem config
-                    onQrCodeSuccess,
-                    onQrCodeError
-                ).then(() => {
-                    console.log("Scanner alternativo iniciado");
-                }).catch(error => {
-                    showScannerError("Não foi possível acessar a câmera. Verifique as permissões.");
-                });
-            } catch (error) {
-                showScannerError("Erro no scanner: " + (error.message || error));
-            }
-        }
-
-        function onQrCodeSuccess(decodedText) {
-            console.log("Código detectado:", decodedText);
-            
-            // Feedback visual
-            document.getElementById('scanner-success').classList.remove('hidden');
-            document.getElementById('scanner-success').textContent = "✓ Código lido!";
-            
-            // Processar após delay
-            setTimeout(() => {
-                processScannedCode(decodedText);
-            }, 300);
-        }
-
-        function onQrCodeError(error) {
-            // Ignorar erros normais de detecção
-            if (!error || error.includes("NotFoundException")) {
-                return;
-            }
-            // Log apenas para debug
-            console.log("Scan error:", error);
-        }
-
-        function processScannedCode(code) {
-            closeScannerModal();
-            
-            if (scannerMode === 'BUSCA') {
-                document.getElementById('search-input').value = code;
-                applyFilters();
-                showMessage("Código lido com sucesso! Buscando...", "success");
-            } else {
-                // Aqui você chamaria a função quickLookup se existisse
-                // quickLookup(code);
-                showMessage(`Código lido: ${code}`, "success");
-            }
-        }
-
-        function getCameraErrorMessage(error) {
-            if (!error) return "Erro desconhecido na câmera";
-            
-            const message = error.message || error.toString();
-            
-            if (message.includes("Permission denied") || message.includes("NotAllowedError")) {
-                return "Permissão da câmera negada. Por favor, permita o acesso à câmera.";
-            }
-            if (message.includes("NotFoundError") || message.includes("no camera")) {
-                return "Nenhuma câmera encontrada no dispositivo.";
-            }
-            if (message.includes("NotReadableError")) {
-                return "A câmera está em uso por outro aplicativo.";
-            }
-            if (message.includes("OverconstrainedError")) {
-                return "Configuração de câmera não suportada.";
-            }
-            
-            return `Erro na câmera: ${message}`;
-        }
-
-        function showScannerError(message) {
-            const errorDiv = document.getElementById('scanner-error');
-            errorDiv.textContent = message;
-            errorDiv.classList.remove('hidden');
-        }
-
-        window.toggleTorch = function() {
-            if (!scannerInstance || !isScannerRunning) return;
-            
-            try {
-                const videoTrack = scannerInstance.getRunningTrack();
-                if (videoTrack && videoTrack.getCapabilities && videoTrack.getCapabilities().torch) {
-                    const torchBtn = document.getElementById('torch-btn');
-                    const isTorchOn = torchBtn.classList.contains('active');
-                    
-                    videoTrack.applyConstraints({
-                        advanced: [{ torch: !isTorchOn }]
-                    }).then(() => {
-                        torchBtn.classList.toggle('active', !isTorchOn);
-                    }).catch(() => {
-                        // Lanterna não suportada
-                    });
+            html5QrCode = new Html5Qrcode("reader");
+            const config = { fps: 15, qrbox: { width: 350, height: 100 }, supportedScanTypes: [0, 1] };
+            html5QrCode.start({ facingMode: "environment" }, config, (text) => {
+                closeScannerModal();
+                if(window.scannerMode === 'BUSCA') {
+                    document.getElementById('search-input').value = text;
+                    applyFilters();
+                    showMessage("Filtro aplicado.");
+                } else {
+                    quickLookup(text);
                 }
-            } catch (error) {
-                // Ignorar erro
-            }
+            }, () => {});
         };
-
-        window.flipCamera = function() {
-            if (!isScannerRunning) return;
-            
-            isBackCamera = !isBackCamera;
-            const flipBtn = document.getElementById('flip-btn');
-            flipBtn.classList.toggle('active', !isBackCamera);
-            
-            // Reiniciar scanner com nova câmera
-            cleanupScanner().then(() => {
-                setTimeout(() => {
-                    startCamera();
-                }, 300);
-            });
-        };
-
-        async function cleanupScanner() {
-            if (scannerInstance && isScannerRunning) {
-                try {
-                    await scannerInstance.stop();
-                    scannerInstance.clear();
-                    isScannerRunning = false;
-                } catch (error) {
-                    console.log("Erro ao limpar scanner:", error);
-                    isScannerRunning = false;
-                }
-            }
-            scannerInstance = null;
-        }
 
         window.closeScannerModal = function() {
-            document.body.style.overflow = 'auto';
             document.getElementById('scanner-modal').classList.add('hidden');
-            
-            // Limpar scanner
-            cleanupScanner();
+            if (html5QrCode) html5QrCode.stop().catch(() => {});
         };
 
-        window.openCadastroModal = () => {
-            resetForm();
-            document.getElementById('medication-modal').classList.remove('hidden');
+        window.loadForEdit = function(id) {
+            const item = allMedications.find(m => m.id === id);
+            if (item) {
+                window.openCadastroModal();
+                document.getElementById('doc-id').value = item.id;
+                document.getElementById('barcode').value = item.barcode;
+                document.getElementById('internalCode').value = item.internalCode;
+                document.getElementById('description').value = item.description;
+                document.getElementById('laboratory').value = item.laboratory;
+                document.getElementById('quantity').value = item.quantity;
+                document.getElementById('expirationDate').value = item.expirationDate || '';
+                document.getElementById('form-title').textContent = "Editar Produto";
+                document.getElementById('barcode').disabled = true;
+                document.getElementById('cancel-edit-button').classList.remove('hidden');
+            }
         };
-        
-        window.closeModal = () => { 
-            document.getElementById('medication-modal').classList.add('hidden'); 
-            resetForm(); 
+
+        window.quickLookup = function(query) {
+            const found = allMedications.find(m => m.barcode === query || m.internalCode === query);
+            if (found) {
+                window.openCadastroModal();
+                document.getElementById('barcode').value = found.barcode;
+                document.getElementById('internalCode').value = found.internalCode;
+                document.getElementById('description').value = found.description;
+                document.getElementById('laboratory').value = found.laboratory;
+                document.getElementById('barcode').disabled = true;
+                document.getElementById('form-title').textContent = "Lançar Novo Lote";
+                showMessage("Produto encontrado. Insira qtd e validade.");
+            } else {
+                showMessage("Produto não encontrado.", "error");
+            }
         };
-        
+
         window.deleteMedication = async (id) => { 
-            if(confirm('Tem certeza que deseja excluir este lote?')) {
-                try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id)); 
-                    showMessage("Lote removido com sucesso.", "success");
-                } catch (error) {
-                    console.error("Erro ao excluir:", error);
-                    showMessage("Erro ao excluir lote: " + error.message, "error");
-                }
+            if(confirm('Excluir este lote?')) {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id)); 
+                showMessage("Removido com sucesso.");
+            }
+        };
+
+        window.confirmDeleteAll = async () => {
+            if(confirm('⚠️ ATENÇÃO: Apagar TODO o inventário? Esta ação não pode ser desfeita.')) {
+                const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'));
+                const promises = snap.docs.map(d => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', d.id)));
+                await Promise.all(promises);
+                showMessage("Inventário limpo.");
             }
         };
 
@@ -1037,30 +353,33 @@
             link.click();
         };
 
-        // Função auxiliar para mostrar mensagens
-        function showMessage(message, type = "info") {
-            const container = document.getElementById('message-container');
-            const messageDiv = document.createElement('div');
-            const bgColor = type === "success" ? "bg-green-100 border-green-400 text-green-700" :
-                          type === "error" ? "bg-red-100 border-red-400 text-red-700" :
-                          type === "warning" ? "bg-yellow-100 border-yellow-400 text-yellow-700" :
-                          "bg-blue-100 border-blue-400 text-blue-700";
-            
-            messageDiv.className = `${bgColor} border px-4 py-3 rounded-lg shadow-lg max-w-sm`;
-            messageDiv.innerHTML = `
-                <div class="flex items-center">
-                    <span class="mr-2">${type === "success" ? "✅" : type === "error" ? "❌" : type === "warning" ? "⚠️" : "ℹ️"}</span>
-                    <span>${message}</span>
-                </div>
-            `;
-            
-            container.appendChild(messageDiv);
-            
-            setTimeout(() => {
-                messageDiv.style.opacity = '0';
-                setTimeout(() => messageDiv.remove(), 300);
-            }, 3000);
-        }
+        window.printFilteredList = () => { window.print(); };
+
+        const resetForm = () => {
+            document.getElementById('medication-form').reset();
+            document.getElementById('doc-id').value = '';
+            document.getElementById('barcode').disabled = false;
+            document.getElementById('form-title').textContent = "Cadastrar Novo Produto";
+            document.getElementById('cancel-edit-button').classList.add('hidden');
+        };
+
+        document.getElementById('medication-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('doc-id').value;
+            const data = {
+                barcode: document.getElementById('barcode').value,
+                internalCode: document.getElementById('internalCode').value,
+                description: document.getElementById('description').value,
+                laboratory: document.getElementById('laboratory').value,
+                quantity: parseInt(document.getElementById('quantity').value),
+                expirationDate: document.getElementById('expirationDate').value,
+                searchTerms: (document.getElementById('barcode').value + document.getElementById('internalCode').value + document.getElementById('description').value).toLowerCase()
+            };
+            if(id) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id), data);
+            else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), data);
+            window.closeModal();
+            showMessage("Salvo com sucesso!");
+        };
 
         init();
     </script>
