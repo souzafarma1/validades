@@ -3,114 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Souza Farma - Controle de Validade (Produção)</title>
-    <!-- Bibliotecas Externas -->
+    <title>Souza Farma - Controle de Validade</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
         .container { max-width: 1200px; margin: auto; padding: 1rem; }
-        .message-box { position: fixed; top: 20px; right: 20px; padding: 1rem; border-radius: 0.5rem; z-index: 1000; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: opacity 0.3s ease-in-out; }
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 50; backdrop-filter: blur(2px); }
-        .modal-content { background-color: white; padding: 1.5rem; border-radius: 1rem; width: 95%; max-width: 500px; max-height: 90vh; overflow-y: auto; position: relative; }
+        .message-box { position: fixed; top: 20px; right: 20px; padding: 1rem; border-radius: 0.5rem; z-index: 1000; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); transition: opacity 0.3s ease; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 50; backdrop-filter: blur(4px); }
+        .modal-content { background-color: white; padding: 1.5rem; border-radius: 1.25rem; width: 95%; max-width: 500px; max-height: 90vh; overflow-y: auto; position: relative; }
         .logo-img { max-width: 180px; height: auto; margin: 0 auto 1.5rem; display: block; }
-        #reader { width: 100% !important; border: none !important; border-radius: 0.8rem; overflow: hidden; background: #000; }
+        #reader { width: 100% !important; border: none !important; border-radius: 1rem; overflow: hidden; background: #000; }
         #reader__dashboard { display: none !important; }
-        input[type="month"] { appearance: none; -webkit-appearance: none; min-height: 45px; }
+        input[type="month"] { min-height: 45px; }
         @media print { .no-print { display: none !important; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 8px; font-size: 10pt; } }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
 
     <div id="app" class="container">
-        <header class="py-6 mb-6 bg-white shadow-sm rounded-xl no-print">
-            <h1 class="text-2xl font-bold text-center text-red-700">Souza Farma - Controle de Validade</h1>
-            <p id="status-db" class="text-center text-gray-400 text-xs">Conectando ao banco de dados...</p>
+        <header class="py-6 mb-6 bg-white shadow-sm rounded-2xl no-print">
+            <h1 class="text-2xl font-bold text-center text-red-700">Souza Farma</h1>
+            <p id="status-db" class="text-center text-gray-400 text-[10px] uppercase font-bold tracking-widest mt-1 animate-pulse">Conectando ao sistema...</p>
         </header>
 
         <div id="message-container" class="fixed top-4 right-4 space-y-2 no-print"></div>
 
         <div class="lg:flex lg:space-x-6">
-            <!-- Coluna de Ferramentas -->
+            <!-- Lateral -->
             <div class="lg:w-1/3 mb-6 lg:mb-0 no-print space-y-4">
-                <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-100 text-center">
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 text-center">
                     <img src="https://raw.githubusercontent.com/souzaimportadosslz-bot/controledevalidades/main/souza_farma_logo.png"
                          alt="Souza Farma" class="logo-img"
                          onerror="this.onerror=null; this.src='https://placehold.co/200x80/cc0000/ffffff?text=Souza+Farma';">
                     
                     <div class="grid grid-cols-1 gap-3">
-                        <button onclick="window.openCadastroModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition shadow-sm active:scale-95">
+                        <button onclick="window.openCadastroModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl transition shadow-lg active:scale-95">
                             + Novo Produto
                         </button>
-                        <button onclick="window.openImportModal()" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-semibold py-3 px-4 rounded-xl transition text-sm">
+                        <button onclick="window.openImportModal()" class="w-full bg-slate-100 text-slate-700 font-bold py-3 rounded-xl transition text-sm">
                             Importar Produtos
                         </button>
-                        <button onclick="window.openImportLotesModal()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-xl transition text-sm">
-                            Atualizar Lotes (Excel)
-                        </button>
-                        <button onclick="window.confirmDeleteAll()" class="w-full text-red-600 hover:bg-red-50 font-medium py-2 text-xs transition border border-red-100 rounded-lg">
-                            Limpar Inventário
+                        <button onclick="window.confirmDeleteAll()" class="w-full text-red-400 hover:text-red-600 font-medium py-2 text-[10px] uppercase tracking-tighter">
+                            Zerar Tudo
                         </button>
                     </div>
                 </div>
 
-                <!-- Lançamento Rápido -->
-                <div class="bg-blue-50 p-5 rounded-2xl border border-blue-100 shadow-sm">
-                    <h3 class="text-sm font-bold mb-3 text-blue-800 uppercase tracking-wider">Lançamento de Lote</h3>
+                <div class="bg-blue-600 p-5 rounded-3xl shadow-xl">
+                    <h3 class="text-xs font-bold mb-3 text-blue-100 uppercase tracking-widest">Entrada de Lote</h3>
                     <div class="flex space-x-2">
-                        <input type="text" id="quick-search-input" class="flex-grow p-3 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm shadow-inner"
-                            placeholder="Cód. Barras ou Interno" onchange="window.quickLookup(this.value)">
-                        <button onclick="window.openScannerModal('LOTE')" class="bg-blue-600 text-white p-3 rounded-xl shadow-lg active:scale-95 transition">
+                        <input type="text" id="quick-search-input" class="flex-grow p-3 border-none rounded-xl focus:ring-0 text-sm shadow-inner"
+                            placeholder="Ler código..." onchange="window.quickLookup(this.value)">
+                        <button onclick="window.openScannerModal('LOTE')" class="bg-white text-blue-600 p-3 rounded-xl shadow-md active:scale-90 transition">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Listagem -->
+            <!-- Lista -->
             <div class="lg:w-2/3 space-y-4">
-                <div class="bg-white p-5 rounded-2xl shadow-md border border-gray-100">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-lg font-bold text-gray-800">Relatório de Validades</h2>
-                        <div class="flex space-x-2 no-print">
-                            <button onclick="window.exportToCsv()" class="bg-green-100 text-green-700 p-2 rounded-lg hover:bg-green-200 transition">Excel</button>
-                            <button onclick="window.printFilteredList()" class="bg-gray-100 text-gray-700 p-2 rounded-lg hover:bg-gray-200 transition">Imprimir</button>
-                        </div>
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-lg font-bold text-gray-800">Validades</h2>
+                        <button onclick="window.exportToCsv()" class="bg-green-50 text-green-700 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider">Exportar</button>
                     </div>
 
-                    <div class="mb-4 no-print space-y-3">
+                    <div class="mb-6 no-print space-y-4">
                         <div class="flex space-x-2">
-                            <input type="text" id="search-input" class="flex-grow p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-green-500 text-sm"
-                                placeholder="Filtrar por código ou nome..." onkeyup="window.applyFilters()">
-                            <button onclick="window.openScannerModal('BUSCA')" class="bg-green-600 text-white p-3 rounded-xl shadow-lg active:scale-95 transition">
+                            <input type="text" id="search-input" class="flex-grow p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-green-500 text-sm"
+                                placeholder="Buscar produto..." onkeyup="window.applyFilters()">
+                            <button onclick="window.openScannerModal('BUSCA')" class="bg-green-600 text-white p-4 rounded-2xl shadow-lg active:scale-90 transition">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                             </button>
-                            <button onclick="window.clearSearch()" class="text-xs font-bold text-gray-400 px-1 uppercase">Limpar</button>
                         </div>
 
-                        <!-- Legenda de Cores -->
-                        <div class="flex flex-wrap gap-3 text-[10px] uppercase font-bold text-gray-500 bg-gray-50 p-3 rounded-xl border border-gray-100">
-                            <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-red-400 mr-1.5 border border-red-600"></span> Vencido / Mês Atual</span>
-                            <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-yellow-300 mr-1.5 border border-yellow-500"></span> Vence 1 Mês</span>
-                            <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-orange-200 mr-1.5 border border-orange-400"></span> Vence 2 Meses</span>
-                            <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-green-200 mr-1.5 border border-green-400"></span> Vence 3 Meses</span>
+                        <!-- Legenda -->
+                        <div class="flex flex-wrap gap-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 p-4 rounded-2xl">
+                            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-red-500 mr-2"></span> Vencido</span>
+                            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-yellow-400 mr-2"></span> 1 Mês</span>
+                            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-orange-400 mr-2"></span> 2 Meses</span>
+                            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-green-400 mr-2"></span> 3 Meses</span>
                         </div>
                     </div>
 
-                    <div class="overflow-x-auto border border-gray-100 rounded-xl">
+                    <div class="overflow-x-auto">
                         <table class="min-w-full">
-                            <thead class="bg-gray-50 text-[10px] text-gray-400 uppercase tracking-widest">
-                                <tr>
-                                    <th class="py-3 px-3 text-left hidden sm:table-cell">Código</th>
-                                    <th class="py-3 px-3 text-left">Descrição</th>
-                                    <th class="py-3 px-3 text-left">Validade</th>
-                                    <th class="py-3 px-3 text-center">Qtd</th>
-                                    <th class="py-3 px-3 text-right no-print">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="medication-list" class="divide-y divide-gray-100 text-sm">
-                                <tr><td colspan="5" class="py-10 text-center text-gray-400">Conectando...</td></tr>
+                            <tbody id="medication-list" class="divide-y divide-gray-50 text-sm">
+                                <tr><td class="py-10 text-center text-gray-400 italic">Estabelecendo ligação segura...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -122,33 +104,35 @@
     <!-- Modais -->
     <div id="medication-modal" class="modal-overlay hidden no-print">
         <div class="modal-content shadow-2xl">
-            <button class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 text-2xl" onclick="window.closeModal()">&times;</button>
-            <h2 class="text-xl font-bold mb-6 text-gray-800" id="form-title">Cadastrar Produto</h2>
+            <button class="absolute top-4 right-4 text-gray-400 text-2xl" onclick="window.closeModal()">&times;</button>
+            <h2 class="text-xl font-bold mb-6 text-gray-800" id="form-title">Produto</h2>
             <form id="medication-form" class="space-y-4">
                 <input type="hidden" id="doc-id">
                 <div class="grid grid-cols-2 gap-4">
-                    <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Cód. Barras</label><input type="text" id="barcode" required class="w-full p-3 bg-gray-50 rounded-xl text-sm border-none focus:ring-2 focus:ring-blue-500"></div>
-                    <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Cód. Interno</label><input type="text" id="internalCode" required class="w-full p-3 bg-gray-50 rounded-xl text-sm border-none focus:ring-2 focus:ring-blue-500"></div>
+                    <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Cód. Barras</label><input type="text" id="barcode" required class="w-full p-3 bg-gray-50 rounded-xl text-sm border-none focus:ring-2 focus:ring-blue-500"></div>
+                    <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Cód. Interno</label><input type="text" id="internalCode" required class="w-full p-3 bg-gray-50 rounded-xl text-sm border-none focus:ring-2 focus:ring-blue-500"></div>
                 </div>
-                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Descrição</label><input type="text" id="description" required class="w-full p-3 bg-gray-50 rounded-xl text-sm border-none focus:ring-2 focus:ring-blue-500"></div>
-                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Laboratório</label><input type="text" id="laboratory" required class="w-full p-3 bg-gray-50 rounded-xl text-sm border-none focus:ring-2 focus:ring-blue-500"></div>
+                <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Descrição</label><input type="text" id="description" required class="w-full p-3 bg-gray-50 rounded-xl text-sm border-none focus:ring-2 focus:ring-blue-500"></div>
+                <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Laboratório</label><input type="text" id="laboratory" required class="w-full p-3 bg-gray-50 rounded-xl text-sm border-none focus:ring-2 focus:ring-blue-500"></div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Qtd</label><input type="number" id="quantity" required class="w-full p-3 bg-gray-50 rounded-xl text-sm border-none focus:ring-2 focus:ring-blue-500"></div>
-                    <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Validade</label><input type="month" id="expirationDate" class="w-full p-3 bg-gray-50 rounded-xl text-sm border-none focus:ring-2 focus:ring-blue-500"></div>
+                    <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Qtd</label><input type="number" id="quantity" required class="w-full p-3 bg-gray-50 rounded-xl text-sm border-none focus:ring-2 focus:ring-blue-500"></div>
+                    <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Validade</label><input type="month" id="expirationDate" class="w-full p-3 bg-gray-50 rounded-xl text-sm border-none focus:ring-2 focus:ring-blue-500"></div>
                 </div>
-                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition mt-2">Salvar</button>
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition mt-2">Gravar Registro</button>
             </form>
         </div>
     </div>
 
     <div id="scanner-modal" class="modal-overlay hidden no-print">
-        <div class="modal-content shadow-2xl overflow-hidden">
-            <button class="absolute top-4 right-4 text-white hover:text-gray-200 text-3xl z-50 bg-black/20 rounded-full w-10 h-10 flex items-center justify-center" onclick="window.closeScannerModal()">&times;</button>
-            <h2 class="text-xl font-bold mb-4 text-blue-700">Scanner Souza Farma</h2>
+        <div class="modal-content shadow-2xl p-0 overflow-hidden">
+            <div class="p-4 flex justify-between items-center bg-white border-b">
+                <h2 class="font-bold text-gray-800">Scanner Souza Farma</h2>
+                <button class="text-gray-400 text-3xl" onclick="window.closeScannerModal()">&times;</button>
+            </div>
             <div id="reader"></div>
-            <div class="mt-4 p-3 bg-blue-50 rounded-xl text-center">
-                <p class="text-blue-800 text-sm font-medium">Aponte para o código de barras.</p>
-                <p class="text-gray-400 text-[10px] mt-1 uppercase font-bold tracking-wider">Otimizado para iPhone 7 / 12</p>
+            <div class="p-6 bg-gray-50 text-center">
+                <p class="text-gray-500 text-xs font-bold uppercase tracking-widest">Otimizado para iPhone 7 / 12</p>
+                <p class="text-[10px] text-gray-400 mt-1">Mantenha a câmara a 15cm do código para melhor foco.</p>
             </div>
         </div>
     </div>
@@ -169,28 +153,40 @@
                 const app = initializeApp(APP_CONFIG);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                if (initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
-                else await signInAnonymously(auth);
+
+                // REGRA 3: Autenticação obrigatória antes de qualquer consulta
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
                 onAuthStateChanged(auth, u => { 
                     if(u) { 
-                        document.getElementById('status-db').textContent = "✅ Base de Dados Conectada";
+                        document.getElementById('status-db').textContent = "✅ Sistema Operacional";
+                        document.getElementById('status-db').classList.remove('animate-pulse');
                         setupListener(); 
                     } 
                 });
             } catch (e) { 
                 console.error(e); 
-                document.getElementById('status-db').textContent = "❌ Erro na Conexão";
+                document.getElementById('status-db').textContent = "⚠️ Erro de Autenticação";
+                window.showMessage("Erro ao conectar ao Firebase: " + e.message, "error");
             }
         }
 
         function setupListener() {
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), snap => {
+            const path = collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos');
+            onSnapshot(path, snap => {
                 allMedications = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 window.applyFilters();
+            }, err => {
+                console.error("Erro no Snapshot:", err);
+                window.showMessage("Erro ao ler dados: " + err.message, "error");
             });
         }
 
-        // --- EXPOSIÇÃO GLOBAL ---
+        // --- FUNÇÕES GLOBAIS ---
         window.openCadastroModal = () => document.getElementById('medication-modal').classList.remove('hidden');
         window.closeModal = () => {
             document.getElementById('medication-modal').classList.add('hidden');
@@ -202,38 +198,55 @@
 
         window.applyFilters = () => {
             const term = document.getElementById('search-input').value.toLowerCase().trim();
-            const exp = document.getElementById('expiration-filter').value;
             let filtered = allMedications;
             if (term) filtered = filtered.filter(m => (m.barcode + (m.internalCode||'') + m.description).toLowerCase().includes(term));
-            if (exp) filtered = filtered.filter(m => m.expirationDate === exp);
             filtered.sort((a, b) => (a.expirationDate || '9999-12').localeCompare(b.expirationDate || '9999-12'));
             renderList(filtered);
         };
 
-        window.clearSearch = () => { document.getElementById('search-input').value = ''; window.applyFilters(); };
+        window.clearSearch = () => { 
+            document.getElementById('search-input').value = ''; 
+            window.applyFilters(); 
+        };
 
         function renderList(meds) {
             const list = document.getElementById('medication-list');
-            list.innerHTML = meds.length ? '' : '<tr><td colspan="5" class="py-10 text-center text-gray-400">Nenhum registro.</td></tr>';
+            if (meds.length === 0) {
+                list.innerHTML = '<tr><td class="py-10 text-center text-gray-400">Nenhum produto encontrado.</td></tr>';
+                return;
+            }
+            list.innerHTML = '';
             const curMonth = new Date().toISOString().slice(0, 7);
             
             meds.forEach(m => {
                 const diff = m.expirationDate ? monthDiff(m.expirationDate, curMonth) : -1;
-                let bg = 'bg-white', text = 'text-gray-800';
-                if (diff <= 0 && m.expirationDate) { bg = 'bg-red-50'; text = 'text-red-700 font-bold'; }
-                else if (diff === 1) { bg = 'bg-yellow-50'; text = 'text-yellow-700 font-bold'; }
-                else if (diff === 2) { bg = 'bg-orange-50'; text = 'text-orange-700'; }
-                else if (diff === 3) { bg = 'bg-green-50'; text = 'text-green-700'; }
+                let bg = 'bg-white', text = 'text-gray-800', border = 'border-gray-100';
+                
+                if (diff <= 0 && m.expirationDate) { bg = 'bg-red-50'; text = 'text-red-700 font-bold'; border = 'border-red-100'; }
+                else if (diff === 1) { bg = 'bg-yellow-50'; text = 'text-yellow-700 font-bold'; border = 'border-yellow-100'; }
+                else if (diff === 2) { bg = 'bg-orange-50'; text = 'text-orange-700'; border = 'border-orange-100'; }
+                else if (diff === 3) { bg = 'bg-green-50'; text = 'text-green-700'; border = 'border-green-100'; }
 
                 const row = document.createElement('tr');
-                row.className = `hover:bg-gray-50 border-b last:border-0 ${bg}`;
+                row.className = `${bg} transition-colors border-b last:border-0 ${border}`;
                 row.innerHTML = `
-                    <td class="py-3 px-3 hidden sm:table-cell text-xs text-gray-400">${m.barcode}</td>
-                    <td class="py-3 px-3"><div class="font-bold text-[11px]">${m.internalCode}</div><div class="text-[13px] ${text}">${m.description}</div></td>
-                    <td class="py-3 px-3 text-xs font-bold">${m.expirationDate ? m.expirationDate.split('-').reverse().join('/') : '---'}</td>
-                    <td class="py-3 px-3 text-center font-bold text-xs">${m.quantity}</td>
-                    <td class="py-3 px-3 text-right no-print">
-                        <button onclick="window.loadForEdit('${m.id}')" class="text-blue-600 font-bold p-2">Editar</button>
+                    <td class="py-4 px-4">
+                        <div class="font-black text-[10px] text-gray-300 uppercase">${m.internalCode}</div>
+                        <div class="text-[14px] leading-tight ${text}">${m.description}</div>
+                        <div class="text-[9px] text-gray-400 mt-1 sm:hidden">EAN: ${m.barcode}</div>
+                    </td>
+                    <td class="py-4 px-2 text-center">
+                        <div class="text-[10px] text-gray-400 uppercase font-bold">Validade</div>
+                        <div class="font-bold text-xs">${m.expirationDate ? m.expirationDate.split('-').reverse().join('/') : '---'}</div>
+                    </td>
+                    <td class="py-4 px-2 text-center">
+                        <div class="text-[10px] text-gray-400 uppercase font-bold">Qtd</div>
+                        <div class="font-black text-sm">${m.quantity}</div>
+                    </td>
+                    <td class="py-4 px-4 text-right no-print">
+                        <button onclick="window.loadForEdit('${m.id}')" class="bg-gray-100 text-gray-600 p-2 rounded-lg active:bg-blue-600 active:text-white transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
                     </td>`;
                 list.appendChild(row);
             });
@@ -246,27 +259,25 @@
             return (y1 - y2) * 12 + (m1 - m2);
         }
 
-        // --- SCANNER OTIMIZADO PARA IPHONE ---
+        // --- SCANNER OTIMIZADO ---
         window.openScannerModal = function(mode) {
             window.scannerMode = mode;
-            if(mode === 'BUSCA') {
-                document.getElementById('search-input').value = '';
-                window.applyFilters();
-            }
+            if(mode === 'BUSCA') window.clearSearch();
+            
             document.getElementById('scanner-modal').classList.remove('hidden');
             html5QrCode = new Html5Qrcode("reader");
             
             const config = { 
-                fps: 20, 
+                fps: 25, 
                 qrbox: (w, h) => {
-                    let width = w * 0.85; 
-                    let height = Math.min(w, h) * 0.25;
-                    if (width > 450) width = 450;
-                    if (height < 100) height = 100;
+                    let width = w * 0.9; 
+                    let height = Math.min(w, h) * 0.3;
+                    if (width > 400) width = 400;
+                    if (height < 120) height = 120;
                     return { width: width, height: height };
                 },
                 aspectRatio: 1.0,
-                supportedScanTypes: [0, 1, 3], // CODE_128, EAN_13, CODE_39
+                supportedScanTypes: [Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.CODE_39],
                 videoConstraints: {
                     facingMode: "environment",
                     width: { ideal: 1280 },
@@ -279,6 +290,7 @@
                 if(window.scannerMode === 'BUSCA') {
                     document.getElementById('search-input').value = text;
                     window.applyFilters();
+                    window.showMessage("Filtro aplicado.");
                 } else {
                     window.quickLookup(text);
                 }
@@ -300,8 +312,9 @@
                 document.getElementById('internalCode').value = found.internalCode;
                 document.getElementById('description').value = found.description;
                 document.getElementById('laboratory').value = found.laboratory;
-                document.getElementById('form-title').textContent = "Lançar Novo Lote";
-            } else { showMessage("Produto não encontrado.", "error"); }
+                document.getElementById('form-title').textContent = "Adicionar Lote";
+                document.getElementById('barcode').disabled = true;
+            } else { window.showMessage("Produto não encontrado.", "error"); }
         };
 
         window.loadForEdit = (id) => {
@@ -316,14 +329,15 @@
                 document.getElementById('quantity').value = m.quantity;
                 document.getElementById('expirationDate').value = m.expirationDate || '';
                 document.getElementById('form-title').textContent = "Editar Produto";
+                document.getElementById('barcode').disabled = true;
             }
         };
 
         window.confirmDeleteAll = async () => {
-            if(confirm('⚠️ Apagar TODO o inventário?')) {
+            if(confirm('🛑 ATENÇÃO: Deseja apagar TODO o inventário? Esta ação é definitiva.')) {
                 const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'));
                 await Promise.all(snap.docs.map(d => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', d.id))));
-                showMessage("Zerado.");
+                window.showMessage("Inventário apagado.");
             }
         };
 
@@ -333,7 +347,7 @@
             const b = new Blob(["\uFEFF", c], { type: 'text/csv;charset=utf-8;' });
             const l = document.createElement('a');
             l.href = URL.createObjectURL(b);
-            l.download = 'relatorio_validades.csv';
+            l.download = 'farmacia_validade.csv';
             l.click();
         };
 
@@ -351,10 +365,12 @@
                 expirationDate: document.getElementById('expirationDate').value,
                 searchTerms: (document.getElementById('barcode').value + (document.getElementById('internalCode').value || '') + document.getElementById('description').value).toLowerCase()
             };
-            if(id) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id), data);
-            else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), data);
-            window.closeModal();
-            showMessage("Salvo!");
+            try {
+                if(id) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id), data);
+                else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), data);
+                window.closeModal();
+                window.showMessage("Guardado com sucesso!");
+            } catch (err) { window.showMessage("Erro ao salvar: " + err.message, "error"); }
         };
 
         init();
