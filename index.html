@@ -45,6 +45,56 @@
         .action-btn { padding: 2px 8px; font-size: 11px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
         .edit-btn { background: #3b82f6; color: white; border: none; }
         .delete-btn { background: #ef4444; color: white; border: none; }
+        
+        /* Estilos para o modal de importação */
+        #import-modal .modal-content, #import-lotes-modal .modal-content {
+            max-width: 500px;
+            width: 90%;
+        }
+        .drop-area {
+            border: 3px dashed #d1d5db;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            text-align: center;
+            background-color: #f9fafb;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .drop-area:hover, .drop-area.dragover {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        .file-input {
+            display: none;
+        }
+        .file-label {
+            display: inline-block;
+            background-color: #3b82f6;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .file-label:hover {
+            background-color: #2563eb;
+        }
+        .file-name {
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+            word-break: break-all;
+        }
+        .template-download {
+            display: inline-block;
+            margin-top: 1rem;
+            color: #3b82f6;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        .template-download:hover {
+            color: #2563eb;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -155,7 +205,7 @@
         </div>
     </div>
 
-    <!-- Modais -->
+    <!-- Modal Cadastro Produto -->
     <div id="medication-modal" class="modal-overlay hidden no-print">
         <div class="modal-content">
             <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="closeModal()"> &times; </button>
@@ -172,6 +222,64 @@
                 </div>
                 <button type="submit" id="submit-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md">Salvar</button>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal Importar Produtos Iniciais -->
+    <div id="import-modal" class="modal-overlay hidden no-print">
+        <div class="modal-content">
+            <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="closeImportModal()"> &times; </button>
+            <h2 class="text-2xl font-semibold mb-6 text-purple-700">Importar Produtos (Inicial)</h2>
+            <div class="mb-4">
+                <p class="text-gray-600 mb-3">Faça o upload de um arquivo CSV com os produtos iniciais. O arquivo deve conter as colunas:</p>
+                <p class="text-sm bg-gray-100 p-2 rounded mb-3"><code>Cód. Barras, Cód. Interno, Descrição, Laboratório</code></p>
+                <p class="text-sm text-gray-500 mb-4">Quantidade e validade serão definidas posteriormente.</p>
+                
+                <a href="#" class="template-download" onclick="downloadTemplate('produtos')">📥 Baixar modelo CSV</a>
+            </div>
+            
+            <div class="drop-area" id="drop-area-import" onclick="document.getElementById('file-input-import').click()">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <p class="text-lg font-medium">Arraste e solte o arquivo aqui</p>
+                <p class="text-gray-500">ou clique para selecionar</p>
+                <input type="file" id="file-input-import" class="file-input" accept=".csv, .txt" onchange="handleFileSelect(this, 'import')">
+            </div>
+            <div id="file-name-import" class="file-name"></div>
+            
+            <div class="mt-6">
+                <button onclick="processImportFile()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md">Importar Produtos</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Atualizar Lotes -->
+    <div id="import-lotes-modal" class="modal-overlay hidden no-print">
+        <div class="modal-content">
+            <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="closeImportLotesModal()"> &times; </button>
+            <h2 class="text-2xl font-semibold mb-6 text-orange-700">Atualizar Lotes (Excel)</h2>
+            <div class="mb-4">
+                <p class="text-gray-600 mb-3">Faça o upload de um arquivo CSV com os lotes. O arquivo deve conter as colunas:</p>
+                <p class="text-sm bg-gray-100 p-2 rounded mb-3"><code>Cód. Interno, Lote, Validade (AAAA-MM), Quantidade</code></p>
+                <p class="text-sm text-gray-500 mb-4">A data deve estar no formato AAAA-MM (ex: 2024-12)</p>
+                
+                <a href="#" class="template-download" onclick="downloadTemplate('lotes')">📥 Baixar modelo CSV</a>
+            </div>
+            
+            <div class="drop-area" id="drop-area-lotes" onclick="document.getElementById('file-input-lotes').click()">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p class="text-lg font-medium">Arraste e solte o arquivo Excel/CSV aqui</p>
+                <p class="text-gray-500">ou clique para selecionar</p>
+                <input type="file" id="file-input-lotes" class="file-input" accept=".csv, .txt, .xlsx, .xls" onchange="handleFileSelect(this, 'lotes')">
+            </div>
+            <div id="file-name-lotes" class="file-name"></div>
+            
+            <div class="mt-6">
+                <button onclick="processLotesFile()" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md">Processar Lotes</button>
+            </div>
         </div>
     </div>
 
@@ -211,7 +319,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, addDoc, onSnapshot, collection, query, deleteDoc, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, addDoc, onSnapshot, collection, query, deleteDoc, updateDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const APP_CONFIG = { apiKey: "AIzaSyDc9-jix-tXCV8JHzivDR8pY1iCNNJeDPg", authDomain: "controle-de-validade-e708a.firebaseapp.com", projectId: "controle-de-validade-e708a", storageBucket: "controle-de-validade-e708a.firebasestorage.app", messagingSenderId: "300173058270", appId: "1:300173058270:web:970549624a4c46af3d624f" };
         const appId = typeof __app_id !== 'undefined' ? __app_id : "controle-de-validade-e708a";
@@ -223,6 +331,10 @@
         let isScannerRunning = false;
         let isBackCamera = true;
         let scannerMode = '';
+        
+        // Variáveis para importação
+        let selectedFile = null;
+        let importType = '';
 
         async function init() {
             try {
@@ -372,6 +484,302 @@
                 showMessage("Erro ao salvar produto: " + error.message, "error");
             }
         });
+
+        // ====================================
+        // FUNÇÕES PARA OS BOTÕES CORRIGIDOS
+        // ====================================
+
+        // 1. Botão "Importar Produtos (Inicial)"
+        window.openImportModal = function() {
+            importType = 'produtos';
+            document.getElementById('import-modal').classList.remove('hidden');
+            setupDragAndDrop('import');
+        };
+
+        window.closeImportModal = function() {
+            document.getElementById('import-modal').classList.add('hidden');
+            resetImportForm();
+        };
+
+        // 2. Botão "Atualizar Lotes (Excel)"
+        window.openImportLotesModal = function() {
+            importType = 'lotes';
+            document.getElementById('import-lotes-modal').classList.remove('hidden');
+            setupDragAndDrop('lotes');
+        };
+
+        window.closeImportLotesModal = function() {
+            document.getElementById('import-lotes-modal').classList.add('hidden');
+            resetImportForm();
+        };
+
+        // 3. Botão "Limpar Inventário"
+        window.confirmDeleteAll = function() {
+            if (confirm('⚠️ ATENÇÃO: Esta ação irá REMOVER TODOS os produtos do inventário. Esta ação NÃO pode ser desfeita.\n\nDeseja continuar?')) {
+                deleteAllMedications();
+            }
+        };
+
+        // Função para configurar drag and drop
+        function setupDragAndDrop(type) {
+            const dropArea = document.getElementById(`drop-area-${type}`);
+            const fileInput = document.getElementById(`file-input-${type}`);
+            const fileNameDisplay = document.getElementById(`file-name-${type}`);
+            
+            if (!dropArea) return;
+            
+            // Prevent default drag behaviors
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            // Highlight drop area when item is dragged over it
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            // Handle dropped files
+            dropArea.addEventListener('drop', handleDrop, false);
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            function highlight() {
+                dropArea.classList.add('dragover');
+            }
+            
+            function unhighlight() {
+                dropArea.classList.remove('dragover');
+            }
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length) {
+                    handleFileSelect({ files: files }, type);
+                }
+            }
+        }
+
+        window.handleFileSelect = function(input, type) {
+            const files = input.files;
+            if (!files || files.length === 0) return;
+            
+            selectedFile = files[0];
+            const fileNameDisplay = document.getElementById(`file-name-${type}`);
+            
+            if (fileNameDisplay) {
+                fileNameDisplay.textContent = `Arquivo selecionado: ${selectedFile.name} (${(selectedFile.size / 1024).toFixed(2)} KB)`;
+                fileNameDisplay.style.color = '#10b981';
+            }
+            
+            importType = type;
+        };
+
+        function resetImportForm() {
+            selectedFile = null;
+            importType = '';
+            document.getElementById('file-name-import').textContent = '';
+            document.getElementById('file-name-lotes').textContent = '';
+        }
+
+        window.downloadTemplate = function(type) {
+            let csvContent = '';
+            let fileName = '';
+            
+            if (type === 'produtos') {
+                csvContent = "Cód. Barras,Cód. Interno,Descrição,Laboratório\n7891234567890,PROD001,Paracetamol 500mg,MedLab\n7891234567891,PROD002,Dipirona 500mg,PharmaCorp";
+                fileName = 'modelo_produtos.csv';
+            } else if (type === 'lotes') {
+                csvContent = "Cód. Interno,Lote,Validade,Quantidade\nPROD001,LOTE-001,2024-12,100\nPROD002,LOTE-002,2024-11,50";
+                fileName = 'modelo_lotes.csv';
+            }
+            
+            const blob = new Blob(["\uFEFF", csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName;
+            link.click();
+            
+            showMessage(`Modelo ${fileName} baixado com sucesso!`, "success");
+        };
+
+        window.processImportFile = async function() {
+            if (!selectedFile) {
+                showMessage("Por favor, selecione um arquivo primeiro.", "error");
+                return;
+            }
+            
+            try {
+                const text = await selectedFile.text();
+                const lines = text.split('\n').filter(line => line.trim() !== '');
+                
+                if (lines.length < 2) {
+                    showMessage("O arquivo está vazio ou não contém dados válidos.", "error");
+                    return;
+                }
+                
+                const headers = lines[0].split(',').map(h => h.trim());
+                
+                if (importType === 'produtos') {
+                    await importProducts(lines, headers);
+                } else {
+                    showMessage("Tipo de importação não reconhecido.", "error");
+                }
+                
+            } catch (error) {
+                console.error("Erro ao processar arquivo:", error);
+                showMessage("Erro ao processar arquivo: " + error.message, "error");
+            }
+        };
+
+        window.processLotesFile = async function() {
+            if (!selectedFile) {
+                showMessage("Por favor, selecione um arquivo primeiro.", "error");
+                return;
+            }
+            
+            try {
+                const text = await selectedFile.text();
+                const lines = text.split('\n').filter(line => line.trim() !== '');
+                
+                if (lines.length < 2) {
+                    showMessage("O arquivo está vazio ou não contém dados válidos.", "error");
+                    return;
+                }
+                
+                const headers = lines[0].split(',').map(h => h.trim());
+                await updateLotes(lines, headers);
+                
+            } catch (error) {
+                console.error("Erro ao processar arquivo:", error);
+                showMessage("Erro ao processar arquivo: " + error.message, "error");
+            }
+        };
+
+        async function importProducts(lines, headers) {
+            const batch = writeBatch(db);
+            const produtosCollection = collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos');
+            
+            let importedCount = 0;
+            
+            // Processar a partir da linha 1 (ignorar cabeçalho)
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i];
+                if (!line.trim()) continue;
+                
+                const values = line.split(',').map(v => v.trim());
+                
+                // Verificar se temos dados suficientes
+                if (values.length < 4) continue;
+                
+                // Criar objeto do produto
+                const produto = {
+                    barcode: values[0] || '',
+                    internalCode: values[1] || '',
+                    description: values[2] || '',
+                    laboratory: values[3] || '',
+                    quantity: 0, // Inicialmente zero
+                    expirationDate: '' // Sem data inicial
+                };
+                
+                // Adicionar ao batch
+                const docRef = doc(produtosCollection);
+                batch.set(docRef, produto);
+                importedCount++;
+            }
+            
+            // Executar batch
+            await batch.commit();
+            closeImportModal();
+            showMessage(`${importedCount} produtos importados com sucesso!`, "success");
+        }
+
+        async function updateLotes(lines, headers) {
+            let updatedCount = 0;
+            let notFoundCount = 0;
+            
+            // Processar a partir da linha 1 (ignorar cabeçalho)
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i];
+                if (!line.trim()) continue;
+                
+                const values = line.split(',').map(v => v.trim());
+                
+                // Verificar se temos dados suficientes
+                if (values.length < 4) continue;
+                
+                const internalCode = values[0];
+                const lote = values[1];
+                const validade = values[2];
+                const quantidade = parseInt(values[3]) || 0;
+                
+                // Procurar produto pelo código interno
+                const produto = allMedications.find(m => m.internalCode === internalCode);
+                
+                if (produto) {
+                    try {
+                        // Atualizar produto existente
+                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', produto.id), {
+                            quantity: quantidade,
+                            expirationDate: validade,
+                            lote: lote
+                        });
+                        updatedCount++;
+                    } catch (error) {
+                        console.error(`Erro ao atualizar produto ${internalCode}:`, error);
+                    }
+                } else {
+                    notFoundCount++;
+                    console.log(`Produto não encontrado: ${internalCode}`);
+                }
+            }
+            
+            closeImportLotesModal();
+            
+            if (updatedCount > 0) {
+                showMessage(`${updatedCount} lotes atualizados com sucesso!`, "success");
+            }
+            
+            if (notFoundCount > 0) {
+                showMessage(`${notFoundCount} produtos não encontrados no sistema.`, "warning");
+            }
+        }
+
+        async function deleteAllMedications() {
+            try {
+                // Obter todos os documentos
+                const querySnapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'));
+                
+                if (querySnapshot.empty) {
+                    showMessage("O inventário já está vazio.", "info");
+                    return;
+                }
+                
+                // Usar batch para deletar todos
+                const batch = writeBatch(db);
+                querySnapshot.forEach((docSnapshot) => {
+                    batch.delete(docSnapshot.ref);
+                });
+                
+                await batch.commit();
+                showMessage("Inventário limpo com sucesso!", "success");
+                
+            } catch (error) {
+                console.error("Erro ao limpar inventário:", error);
+                showMessage("Erro ao limpar inventário: " + error.message, "error");
+            }
+        }
+
+        // ====================================
+        // FUNÇÕES DO SCANNER (mantidas do código original)
+        // ====================================
 
         window.openScannerModal = function(mode) {
             scannerMode = mode;
@@ -635,12 +1043,13 @@
             const messageDiv = document.createElement('div');
             const bgColor = type === "success" ? "bg-green-100 border-green-400 text-green-700" :
                           type === "error" ? "bg-red-100 border-red-400 text-red-700" :
+                          type === "warning" ? "bg-yellow-100 border-yellow-400 text-yellow-700" :
                           "bg-blue-100 border-blue-400 text-blue-700";
             
             messageDiv.className = `${bgColor} border px-4 py-3 rounded-lg shadow-lg max-w-sm`;
             messageDiv.innerHTML = `
                 <div class="flex items-center">
-                    <span class="mr-2">${type === "success" ? "✅" : type === "error" ? "❌" : "ℹ️"}</span>
+                    <span class="mr-2">${type === "success" ? "✅" : type === "error" ? "❌" : type === "warning" ? "⚠️" : "ℹ️"}</span>
                     <span>${message}</span>
                 </div>
             `;
