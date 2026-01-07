@@ -12,104 +12,110 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
-        .container { max-width: 1200px; margin: auto; padding: 1rem; }
+        .container { max-width: 1300px; margin: auto; padding: 0.75rem; }
         .message-box { position: fixed; top: 20px; right: 20px; padding: 1rem; border-radius: 0.5rem; z-index: 1000; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: opacity 0.3s ease-in-out; }
         input[type="month"] { -webkit-appearance: none; appearance: none; }
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 50; }
-        .modal-content { background-color: white; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); max-width: 90%; width: 500px; max-height: 90vh; overflow-y: auto; position: relative; }
-        .logo-img { max-width: 100%; height: auto; margin: 0 auto 1.5rem; display: block; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .modal-content { background-color: white; padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); max-width: 90%; width: 500px; max-height: 90vh; overflow-y: auto; position: relative; }
+        .logo-img { max-width: 100%; height: auto; max-height: 80px; margin: 0 auto 1rem; display: block; border-radius: 0.5rem; }
         #reader { width: 100% !important; border: none !important; border-radius: 0.5rem; overflow: hidden; }
-        @media print { .no-print { display: none !important; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 10pt; } }
+        
+        /* Ajustes de Tabela para ocupar menos espaço */
+        table { width: 100%; table-layout: fixed; }
+        th, td { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        
+        @media print { .no-print { display: none !important; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 4px; text-align: left; font-size: 9pt; } }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
 
     <div id="app" class="container">
-        <header class="py-6 mb-8 bg-white shadow-md rounded-lg no-print">
-            <h1 class="text-3xl font-bold text-center text-red-700">Souza Farma - Controle de Validade (ONLINE)</h1>
-            <p id="db-status" class="text-center text-gray-400 text-xs mt-1">Conectando...</p>
+        <header class="py-4 mb-4 bg-white shadow-sm rounded-lg no-print">
+            <h1 class="text-2xl font-bold text-center text-red-700">Souza Farma - Controle de Validade</h1>
+            <p id="db-status" class="text-center text-gray-400 text-[10px] mt-1 uppercase font-bold tracking-tighter">Conectando...</p>
         </header>
 
         <div id="message-container" class="fixed top-4 right-4 space-y-2 no-print"></div>
 
-        <div class="lg:flex lg:space-x-8">
-            <!-- Coluna 1: Ferramentas -->
-            <div class="lg:w-1/4 mb-8 lg:mb-0 no-print">
-                <div class="bg-white p-6 rounded-xl shadow-xl border border-gray-200">
+        <div class="lg:flex lg:space-x-4">
+            <!-- Coluna 1: Ferramentas (Agora mais estreita: 1/5) -->
+            <div class="lg:w-1/5 mb-4 lg:mb-0 no-print">
+                <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
                     <img src="https://raw.githubusercontent.com/souzaimportadosslz-bot/controledevalidades/main/souza_farma_logo.png" 
-                         alt="Logomarca Souza Farma" class="logo-img"
-                         onerror="this.onerror=null; this.src='https://placehold.co/600x200/DC3545/FFFFFF?text=SOUZA+FARMA+LOGO';">
+                         alt="Logo" class="logo-img"
+                         onerror="this.onerror=null; this.src='https://placehold.co/200x60/cc0000/ffffff?text=Souza+Farma';">
                     
-                    <div class="flex flex-col space-y-4 mb-6">
-                        <button onclick="window.openCadastroModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition transform hover:scale-[1.01]">
-                            + Cadastrar Novo Produto
+                    <div class="flex flex-col space-y-2 mb-4">
+                        <button onclick="window.openCadastroModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded text-sm transition shadow-sm">
+                            + Novo Produto
                         </button>
-                        <button onclick="window.openImportModal()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition transform hover:scale-[1.01]">
-                            Importar Produtos em Massa
+                        <button onclick="window.openImportModal()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-3 rounded text-xs transition">
+                            Importar Excel
                         </button>
-                        <button onclick="window.confirmDeleteAll()" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition transform hover:scale-[1.01] text-sm">
-                            ❌ Excluir TODO o Inventário
+                        <button onclick="window.confirmDeleteAll()" class="w-full text-red-600 hover:bg-red-50 py-1 rounded text-[10px] uppercase font-bold border border-red-100">
+                            Zerar Tudo
                         </button>
                     </div>
 
-                    <div class="mb-6 border p-4 rounded-lg bg-blue-50">
-                        <h3 class="text-lg font-semibold mb-2 text-blue-700">Lançamento de Lote</h3>
-                        <div class="flex space-x-2">
-                            <input type="text" id="quick-search-input" class="flex-grow p-2 border border-blue-300 rounded-lg focus:ring-blue-500"
-                                placeholder="Escaneie ou digite..." onchange="window.quickLookup(this.value)">
-                            <button onclick="window.openScannerModal('LOTE')" class="bg-blue-500 text-white p-2 rounded-lg transition transform hover:scale-105">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                    <div class="border-t pt-3 bg-blue-50/50 p-3 rounded">
+                        <label class="text-[11px] font-bold text-blue-700 uppercase">Lançar Lote</label>
+                        <div class="flex space-x-1 mt-1">
+                            <input type="text" id="quick-search-input" class="flex-grow p-1.5 border border-blue-200 rounded text-xs focus:ring-1 focus:ring-blue-500"
+                                placeholder="Cód..." onchange="window.quickLookup(this.value)">
+                            <button onclick="window.openScannerModal('LOTE')" class="bg-blue-600 text-white p-1.5 rounded transition active:scale-95">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Coluna 2: Lista -->
-            <div class="lg:w-3/4">
-                <div class="bg-white p-6 rounded-xl shadow-xl border border-gray-200">
-                    <h2 class="text-2xl font-semibold mb-4 text-blue-700">Itens com Baixa Validade</h2>
-
-                    <div class="flex space-x-2 mb-4 no-print">
-                        <button onclick="window.exportToCsv()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition">Exportar Excel (CSV)</button>
-                        <button onclick="window.printFilteredList()" class="flex-1 bg-gray-700 hover:bg-gray-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition">Imprimir PDF</button>
-                    </div>
-
-                    <div class="mb-4 no-print">
-                        <label for="search-input" class="block text-sm font-medium text-gray-700 mb-1">Filtrar Lista por Cód. Barras, Interno ou Descrição:</label>
-                        <div class="flex space-x-2">
-                            <input type="text" id="search-input" class="flex-grow p-2 border border-gray-300 rounded-lg focus:ring-green-500"
-                                placeholder="Digite para filtrar..." onkeyup="window.applyFilters()">
-                            <button onclick="window.openScannerModal('BUSCA')" class="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg transition transform hover:scale-105" title="Scanner Busca">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                            </button>
-                            <button onclick="window.clearSearch()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 rounded-lg text-xs font-bold">LIMPAR</button>
+            <!-- Coluna 2: Lista (Agora mais larga: 4/5) -->
+            <div class="lg:w-4/5">
+                <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 space-y-2 sm:space-y-0">
+                        <h2 class="text-lg font-bold text-gray-800">Itens com Baixa Validade</h2>
+                        <div class="flex space-x-2 no-print">
+                            <button onclick="window.exportToCsv()" class="bg-green-50 text-green-700 px-3 py-1.5 rounded border border-green-200 text-xs font-bold uppercase">Exportar</button>
+                            <button onclick="window.printFilteredList()" class="bg-gray-50 text-gray-700 px-3 py-1.5 rounded border border-gray-300 text-xs font-bold uppercase">PDF</button>
                         </div>
                     </div>
 
-                    <!-- Legenda de Cores -->
-                    <div class="flex flex-wrap text-xs mb-4 p-2 bg-gray-50 rounded-lg border no-print">
-                        <span class="mr-4 flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-1"></span> Vencido/Mês Atual (0)</span>
-                        <span class="mr-4 flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-yellow-600 mr-1"></span> Vence em 1 Mês</span>
-                        <span class="mr-4 flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-orange-500 mr-1"></span> Vence em 2 Meses</span>
-                        <span class="flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-green-400 mr-1"></span> Vence em 3 Meses</span>
+                    <!-- Filtros Compactos -->
+                    <div class="mb-3 no-print space-y-2">
+                        <div class="flex space-x-2">
+                            <input type="text" id="search-input" class="flex-grow p-2 bg-gray-50 border border-gray-200 rounded text-sm focus:ring-1 focus:ring-green-500"
+                                placeholder="Filtrar por nome, barras ou interno..." onkeyup="window.applyFilters()">
+                            <button onclick="window.openScannerModal('BUSCA')" class="bg-green-600 text-white p-2 rounded shadow-sm active:scale-95">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            </button>
+                            <button onclick="window.clearSearch()" class="text-[10px] font-bold text-gray-400 border border-gray-200 px-2 rounded uppercase hover:bg-gray-100 transition">Limpar</button>
+                        </div>
+
+                        <!-- Legenda de Cores compacta -->
+                        <div class="flex flex-wrap gap-3 text-[10px] font-bold text-gray-500 py-1">
+                            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-red-400 mr-1 border border-red-600"></span> Vencido</span>
+                            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-yellow-200 mr-1 border border-yellow-400"></span> 1 Mês</span>
+                            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-orange-100 mr-1 border border-orange-300"></span> 2 Meses</span>
+                            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-green-100 mr-1 border border-green-300"></span> 3 Meses</span>
+                        </div>
                     </div>
 
-                    <div class="max-h-[600px] overflow-y-auto mt-4 border border-gray-200 rounded-lg">
+                    <div class="overflow-x-auto border border-gray-100 rounded">
                         <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50 sticky top-0">
+                            <thead class="bg-gray-50 sticky top-0 text-[10px] text-gray-400 uppercase tracking-wider">
                                 <tr>
-                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Cód. Barras</th>
-                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cód. Interno</th>
-                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descrição</th>
-                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Laboratório</th>
-                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Validade</th>
-                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Qtd</th>
-                                    <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase no-print">Ações</th>
+                                    <th class="py-2 px-2 text-left w-[15%] hidden sm:table-cell">Barras</th>
+                                    <th class="py-2 px-2 text-left w-[10%]">Interno</th>
+                                    <th class="py-2 px-2 text-left w-[40%]">Descrição</th>
+                                    <th class="py-2 px-2 text-left w-[15%] hidden sm:table-cell">Lab</th>
+                                    <th class="py-2 px-2 text-left w-[10%]">Validade</th>
+                                    <th class="py-2 px-2 text-center w-[5%]">Qtd</th>
+                                    <th class="py-2 px-2 text-right w-[10%] no-print">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody id="medication-list" class="bg-white divide-y divide-gray-200 text-sm">
-                                <tr><td colspan="7" class="p-4 text-center text-gray-500 italic">Carregando dados...</td></tr>
+                            <tbody id="medication-list" class="bg-white divide-y divide-gray-100 text-[11px] font-medium">
+                                <tr><td colspan="7" class="p-8 text-center text-gray-400 italic">Estabelecendo conexão...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -121,48 +127,45 @@
     <!-- Modais -->
     <div id="medication-modal" class="modal-overlay hidden no-print">
         <div class="modal-content shadow-2xl">
-            <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="window.closeModal()"> &times; </button>
-            <h2 class="text-2xl font-semibold mb-6 text-blue-700" id="form-title"> Cadastrar Produto </h2>
-            <form id="medication-form">
+            <button class="absolute top-4 right-4 text-gray-400 text-2xl" onclick="window.closeModal()"> &times; </button>
+            <h2 class="text-xl font-bold mb-4 text-blue-700" id="form-title">Cadastrar Produto</h2>
+            <form id="medication-form" class="space-y-3">
                 <input type="hidden" id="doc-id">
-                <div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Código de Barras</label><input type="text" id="barcode" required class="w-full p-2 border border-gray-300 rounded-lg"></div>
-                <div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Código Interno</label><input type="text" id="internalCode" required class="w-full p-2 border border-gray-300 rounded-lg"></div>
-                <div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Descrição</label><input type="text" id="description" required class="w-full p-2 border border-gray-300 rounded-lg"></div>
-                <div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Laboratório</label><input type="text" id="laboratory" required class="w-full p-2 border border-gray-300 rounded-lg"></div>
-                <div class="flex space-x-4 mb-6">
-                    <div class="flex-1"><label class="block text-sm font-medium text-gray-700 mb-1">Qtd</label><input type="number" id="quantity" required class="w-full p-2 border border-gray-300 rounded-lg"></div>
-                    <div class="flex-1"><label class="block text-sm font-medium text-gray-700 mb-1">Validade (MM/AAAA)</label><input type="month" id="expirationDate" class="w-full p-2 border border-gray-300 rounded-lg"></div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-[10px] font-bold text-gray-400 uppercase">Cód. Barras</label><input type="text" id="barcode" required class="w-full p-2 bg-gray-50 border border-gray-200 rounded text-sm focus:ring-1 focus:ring-blue-500"></div>
+                    <div><label class="block text-[10px] font-bold text-gray-400 uppercase">Cód. Interno</label><input type="text" id="internalCode" required class="w-full p-2 bg-gray-50 border border-gray-200 rounded text-sm focus:ring-1 focus:ring-blue-500"></div>
                 </div>
-                <button type="submit" id="submit-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition"> Salvar </button>
+                <div><label class="block text-[10px] font-bold text-gray-400 uppercase">Descrição</label><input type="text" id="description" required class="w-full p-2 bg-gray-50 border border-gray-200 rounded text-sm"></div>
+                <div><label class="block text-[10px] font-bold text-gray-400 uppercase">Laboratório</label><input type="text" id="laboratory" required class="w-full p-2 bg-gray-50 border border-gray-200 rounded text-sm"></div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-[10px] font-bold text-gray-400 uppercase">Qtd</label><input type="number" id="quantity" required class="w-full p-2 bg-gray-50 border border-gray-200 rounded text-sm"></div>
+                    <div><label class="block text-[10px] font-bold text-gray-400 uppercase">Validade</label><input type="month" id="expirationDate" class="w-full p-2 bg-gray-50 border border-gray-200 rounded text-sm"></div>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded shadow-lg active:scale-95 transition mt-2">Salvar Registro</button>
             </form>
         </div>
     </div>
 
     <div id="import-modal" class="modal-overlay hidden no-print">
         <div class="modal-content">
-            <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="window.closeImportModal()"> &times; </button>
-            <h2 class="text-2xl font-semibold mb-6 text-purple-700">Importação em Massa</h2>
-            <div class="mb-4"> <label class="block text-sm font-medium text-gray-700 mb-1">Arquivo CSV/TSV:</label> <input type="file" id="bulk-file-input" accept=".csv, .tsv" class="w-full p-2 border border-gray-300 rounded-lg bg-white"> </div>
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Separador:</label>
-                <select id="delimiter-select" class="w-full p-2 border border-gray-300 rounded-lg">
-                    <option value=";">Ponto e Vírgula (;)</option><option value=",">Vírgula (,)</option><option value="\t">Tabulação (TSV)</option>
-                </select>
-            </div>
-            <button onclick="window.handleBulkImport()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md"> Importar Agora </button>
+            <button class="absolute top-4 right-4 text-gray-400 text-2xl" onclick="window.closeImportModal()"> &times; </button>
+            <h2 class="text-xl font-bold mb-4 text-purple-700">Importação em Massa</h2>
+            <input type="file" id="bulk-file-input" accept=".csv, .tsv" class="w-full p-2 border border-gray-200 rounded bg-gray-50 text-xs mb-3">
+            <label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Separador:</label>
+            <select id="delimiter-select" class="w-full p-2 border border-gray-200 rounded text-sm mb-4"><option value=";">Ponto e Vírgula (;)</option><option value=",">Vírgula (,)</option><option value="\t">Tabulação (TSV)</option></select>
+            <button onclick="window.handleBulkImport()" class="w-full bg-purple-600 text-white font-bold py-3 rounded">Processar Arquivo</button>
         </div>
     </div>
 
     <div id="scanner-modal" class="modal-overlay hidden no-print">
         <div class="modal-content shadow-2xl p-0 overflow-hidden">
-            <div class="p-4 flex justify-between items-center bg-white border-b">
-                <h2 class="font-bold text-gray-800">Scanner Souza Farma</h2>
-                <button class="text-gray-400 text-3xl" onclick="window.closeScannerModal()">&times;</button>
+            <div class="p-3 flex justify-between items-center bg-white border-b">
+                <h2 class="font-bold text-gray-800 text-sm uppercase">Scanner Souza Farma</h2>
+                <button class="text-gray-400 text-2xl" onclick="window.closeScannerModal()">&times;</button>
             </div>
             <div id="reader" class="bg-black"></div>
-            <div class="p-4 bg-gray-50 text-center">
-                <p class="text-gray-500 text-xs font-bold uppercase tracking-widest">Otimizado para iPhone 7 / 12</p>
-                <p class="text-[10px] text-gray-400 mt-1 uppercase">Mantenha a câmara a 15cm do código para melhor foco.</p>
+            <div class="p-3 bg-gray-50 text-center">
+                <p class="text-[10px] text-gray-400 uppercase font-black tracking-widest">Otimizado para iPhone 7 e 12</p>
             </div>
         </div>
     </div>
@@ -170,7 +173,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, addDoc, onSnapshot, collection, query, deleteDoc, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, addDoc, onSnapshot, collection, deleteDoc, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const APP_CONFIG = { apiKey: "AIzaSyDc9-jix-tXCV8JHzivDR8pY1iCNNJeDPg", authDomain: "controle-de-validade-e708a.firebaseapp.com", projectId: "controle-de-validade-e708a", storageBucket: "controle-de-validade-e708a.firebasestorage.app", messagingSenderId: "300173058270", appId: "1:300173058270:web:970549624a4c46af3d624f" };
         const appId = typeof __app_id !== 'undefined' ? __app_id : "controle-de-validade-e708a";
@@ -183,10 +186,8 @@
                 const app = initializeApp(APP_CONFIG);
                 auth = getAuth(app);
                 db = getFirestore(app);
-
                 if (initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
                 else await signInAnonymously(auth);
-
                 onAuthStateChanged(auth, u => { 
                     if(u) { 
                         document.getElementById('db-status').textContent = "✅ Sistema Conectado";
@@ -195,23 +196,18 @@
                 });
             } catch (e) { 
                 console.error(e); 
-                document.getElementById('db-status').textContent = "❌ Falha na Conexão";
-                window.showMessage("Erro de conexão. Verifique a internet.", "error");
+                document.getElementById('db-status').textContent = "❌ Erro de Conexão";
             }
         }
 
         function setupListener() {
-            const path = collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos');
-            onSnapshot(path, snap => {
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), snap => {
                 allMedications = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 window.applyFilters();
-            }, err => {
-                console.error(err);
-                window.showMessage("Erro ao ler dados: " + err.message, "error");
-            });
+            }, err => console.error(err));
         }
 
-        // --- LIGAÇÃO GLOBAL DAS FUNÇÕES ---
+        // --- FUNÇÕES GLOBAIS ---
         window.openCadastroModal = () => document.getElementById('medication-modal').classList.remove('hidden');
         window.closeModal = () => {
             document.getElementById('medication-modal').classList.add('hidden');
@@ -235,30 +231,31 @@
 
         function renderList(meds) {
             const list = document.getElementById('medication-list');
-            if (meds.length === 0) { list.innerHTML = '<tr><td colspan="7" class="p-10 text-center text-gray-400">Nenhum item encontrado.</td></tr>'; return; }
+            if (meds.length === 0) { list.innerHTML = '<tr><td colspan="7" class="p-10 text-center text-gray-400">Nenhum item.</td></tr>'; return; }
             list.innerHTML = '';
             const curMonth = new Date().toISOString().slice(0, 7);
             
             meds.forEach(m => {
                 const diff = m.expirationDate ? monthDiff(m.expirationDate, curMonth) : -1;
-                let bg = 'bg-white', text = 'text-gray-700';
-                if (diff <= 0 && m.expirationDate) { bg = 'bg-red-100'; text = 'text-red-800 font-bold'; }
-                else if (diff === 1) { bg = 'bg-yellow-200'; text = 'text-yellow-900 font-bold'; }
-                else if (diff === 2) { bg = 'bg-orange-50'; text = 'text-orange-900'; }
-                else if (diff === 3) { bg = 'bg-green-100'; text = 'text-green-900'; }
+                let bg = 'bg-white', text = 'text-gray-700', border = 'border-gray-100';
+                
+                if (diff <= 0 && m.expirationDate) { bg = 'bg-red-50'; text = 'text-red-700 font-bold'; border = 'border-red-100'; }
+                else if (diff === 1) { bg = 'bg-yellow-50'; text = 'text-yellow-700 font-bold'; border = 'border-yellow-100'; }
+                else if (diff === 2) { bg = 'bg-orange-50'; text = 'text-orange-700'; border = 'border-orange-100'; }
+                else if (diff === 3) { bg = 'bg-green-50'; text = 'text-green-700'; border = 'border-green-100'; }
 
                 const row = document.createElement('tr');
-                row.className = `hover:bg-gray-50 border-b last:border-0 ${bg}`;
+                row.className = `hover:bg-gray-50 border-b last:border-0 ${bg} ${border}`;
                 row.innerHTML = `
-                    <td class="px-3 py-3 hidden sm:table-cell text-xs text-gray-400">${m.barcode}</td>
-                    <td class="px-3 py-3 font-bold text-xs">${m.internalCode}</td>
-                    <td class="px-3 py-3 ${text}">${m.description}</td>
-                    <td class="px-3 py-3 hidden sm:table-cell text-xs">${m.laboratory}</td>
-                    <td class="px-3 py-3 font-bold">${m.expirationDate ? m.expirationDate.split('-').reverse().join('/') : '---'}</td>
-                    <td class="px-3 py-3 font-black text-center">${m.quantity}</td>
-                    <td class="px-3 py-3 text-right no-print">
-                        <button onclick="window.loadForEdit('${m.id}')" class="text-blue-600 font-bold px-2 py-1">Editar</button>
-                        <button onclick="window.deleteMedication('${m.id}')" class="text-red-600 font-bold px-2 py-1">Excluir</button>
+                    <td class="py-2 px-2 hidden sm:table-cell text-gray-400 text-[10px]">${m.barcode}</td>
+                    <td class="py-2 px-2 font-bold text-gray-800">${m.internalCode}</td>
+                    <td class="py-2 px-2 ${text} truncate font-semibold" title="${m.description}">${m.description}</td>
+                    <td class="py-2 px-2 hidden sm:table-cell text-gray-500">${m.laboratory}</td>
+                    <td class="py-2 px-2 font-bold text-gray-900">${m.expirationDate ? m.expirationDate.split('-').reverse().join('/') : '---'}</td>
+                    <td class="py-2 px-2 font-black text-center text-gray-900">${m.quantity}</td>
+                    <td class="py-2 px-2 text-right no-print">
+                        <button onclick="window.loadForEdit('${m.id}')" class="text-blue-600 hover:underline mr-2 font-bold uppercase text-[9px]">Editar</button>
+                        <button onclick="window.deleteMedication('${m.id}')" class="text-red-600 hover:underline font-bold uppercase text-[9px]">Excluir</button>
                     </td>`;
                 list.appendChild(row);
             });
@@ -271,14 +268,12 @@
             return (y1 - y2) * 12 + (m1 - m2);
         }
 
-        // --- SCANNER OTIMIZADO (IPHONE 7/12) ---
+        // --- SCANNER OTIMIZADO ---
         window.openScannerModal = function(mode) {
             window.scannerMode = mode;
             if(mode === 'BUSCA') window.clearSearch();
-            
             document.getElementById('scanner-modal').classList.remove('hidden');
             html5QrCode = new Html5Qrcode("reader");
-            
             const config = { 
                 fps: 25, 
                 qrbox: (w, h) => {
@@ -292,7 +287,6 @@
                 supportedScanTypes: [Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.CODE_39],
                 videoConstraints: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
             };
-
             html5QrCode.start({ facingMode: "environment" }, config, (text) => {
                 window.closeScannerModal();
                 if(window.scannerMode === 'BUSCA') {
@@ -341,10 +335,10 @@
         window.deleteMedication = async (id) => { if(confirm('Excluir este lote?')) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id)); };
 
         window.confirmDeleteAll = async () => {
-            if(confirm('🛑 ATENÇÃO: Apagar TODO o inventário? Esta ação é definitiva.')) {
+            if(confirm('🛑 ATENÇÃO: Deseja apagar TODO o inventário?')) {
                 const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'));
                 await Promise.all(snap.docs.map(d => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', d.id))));
-                window.showMessage("Inventário apagado.");
+                window.showMessage("Tudo apagado!");
             }
         };
 
@@ -394,7 +388,7 @@
             if(id) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id), data);
             else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), data);
             window.closeModal();
-            window.showMessage("Salvo com sucesso!");
+            window.showMessage("Sucesso!");
         };
 
         init();
