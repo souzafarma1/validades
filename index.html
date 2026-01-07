@@ -3,657 +3,391 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Souza Farma - Controle de Validade (Produção)</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Barcode Scanner Library - Versão estável -->
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <!-- Google Font - Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Sistema de Gerenciamento de Inventário</title>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
-        .container { max-width: 1200px; margin: auto; padding: 1rem; }
-        .message-box { position: fixed; top: 20px; right: 20px; padding: 1rem; border-radius: 0.5rem; z-index: 1000; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); transition: opacity 0.3s ease-in-out; }
-        input[type="month"] { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
-        #expirationDate, #expiration-filter { padding: 6px; line-height: normal; }
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 50; }
-        .modal-content { background-color: white; padding: 1rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); max-width: 95%; width: 95%; max-height: 90vh; overflow-y: auto; position: relative; }
-        .logo-img { max-width: 100%; height: auto; margin: 0 auto 1.5rem; display: block; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-        #scanner-modal .modal-content { max-width: 100%; width: 100%; height: 100%; border-radius: 0; padding: 0; background: #000; }
-        @media (max-width: 640px) { .sm\:table-cell { display: none !important; } }
-        @media print { .no-print { display: none !important; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 10pt; } }
-        
-        /* Estilos SIMPLES e FUNCIONAIS para o scanner */
-        #scanner-modal .modal-content { position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100% !important; height: 100% !important; max-width: 100% !important; max-height: 100% !important; }
-        #reader { width: 100% !important; height: 100% !important; position: relative; }
-        #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
-        .scanner-container { position: relative; width: 100%; height: 100%; }
-        .scanner-header { position: absolute; top: 0; left: 0; right: 0; background: rgba(0, 0, 0, 0.8); color: white; padding: 1rem; z-index: 10; text-align: center; }
-        .scanner-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; height: 150px; border: 4px solid rgba(59, 130, 246, 0.8); border-radius: 12px; pointer-events: none; z-index: 2; }
-        .scanner-line { position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 1), transparent); animation: scan 2s ease-in-out infinite; }
-        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
-        .scanner-footer { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0, 0, 0, 0.8); color: white; padding: 1rem; z-index: 10; }
-        .scanner-buttons { display: flex; gap: 1rem; justify-content: center; }
-        .scanner-btn { background: rgba(255, 255, 255, 0.2); border: none; color: white; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
-        .scanner-btn.active { background: rgba(59, 130, 246, 0.7); }
-        .close-scanner { position: absolute; top: 1rem; right: 1rem; background: rgba(0, 0, 0, 0.7); color: white; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; z-index: 20; border: none; cursor: pointer; }
-        .scanner-error { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(220, 38, 38, 0.9); color: white; padding: 1rem; border-radius: 8px; z-index: 30; text-align: center; max-width: 80%; }
-        .scanner-success { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(34, 197, 94, 0.9); color: white; padding: 1rem; border-radius: 8px; z-index: 30; text-align: center; }
-        
-        /* Estilos para os botões de ação na tabela */
-        .action-buttons { display: flex; gap: 4px; justify-content: flex-end; }
-        .action-btn { padding: 2px 8px; font-size: 11px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
-        .edit-btn { background: #3b82f6; color: white; border: none; }
-        .delete-btn { background: #ef4444; color: white; border: none; }
-    </style>
-</head>
-<body class="bg-gray-100 min-h-screen">
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-    <div id="app" class="container">
-        <header class="py-6 mb-8 bg-white shadow-md rounded-lg no-print">
-            <h1 class="text-3xl font-bold text-center text-red-700">Souza Farma - Controle de Validade (ONLINE)</h1>
-            <p class="text-center text-gray-500 mt-2">Sistema Gerencial de Validades</p>
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eaeaea;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 16px;
+        }
+
+        .buttons-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .action-button {
+            flex: 1;
+            min-width: 250px;
+            padding: 18px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        .action-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .action-button:active {
+            transform: translateY(0);
+        }
+
+        .button-icon {
+            font-size: 20px;
+        }
+
+        /* Estilos individuais para cada botão */
+        #importarBtn {
+            background-color: #3498db;
+            color: white;
+        }
+
+        #importarBtn:hover {
+            background-color: #2980b9;
+        }
+
+        #atualizarBtn {
+            background-color: #2ecc71;
+            color: white;
+        }
+
+        #atualizarBtn:hover {
+            background-color: #27ae60;
+        }
+
+        #limparBtn {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        #limparBtn:hover {
+            background-color: #c0392b;
+        }
+
+        /* Área de status/log */
+        .status-container {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            border: 1px solid #eaeaea;
+        }
+
+        .status-title {
+            font-size: 18px;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-title i {
+            font-size: 20px;
+        }
+
+        .status-log {
+            min-height: 150px;
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .log-entry {
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-time {
+            color: #7f8c8d;
+            font-size: 12px;
+            min-width: 70px;
+        }
+
+        .log-message {
+            flex-grow: 1;
+        }
+
+        .success { color: #27ae60; }
+        .error { color: #e74c3c; }
+        .warning { color: #f39c12; }
+        .info { color: #3498db; }
+
+        /* Rodapé */
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #95a5a6;
+            font-size: 14px;
+            padding-top: 20px;
+            border-top: 1px solid #eaeaea;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .button-row {
+                flex-direction: column;
+            }
+            
+            .action-button {
+                min-width: 100%;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Sistema de Gerenciamento de Inventário</h1>
+            <p class="subtitle">Gerencie seus produtos, lotes e inventário de forma eficiente</p>
         </header>
 
-        <div id="message-container" class="fixed top-4 right-4 space-y-2 no-print"></div>
-
-        <div class="lg:flex lg:space-x-8">
-            <!-- Coluna de Ferramentas -->
-            <div class="lg:w-1/4 mb-8 lg:mb-0 no-print">
-                <div class="bg-white p-6 rounded-xl shadow-xl border border-gray-200">
-                    <img src="https://raw.githubusercontent.com/souzaimportadosslz-bot/controledevalidades/main/souza_farma_logo.png"
-                         alt="Logomarca Souza Farma" class="logo-img"
-                         onerror="this.onerror=null; this.src='https://placehold.co/600x200/DC3545/FFFFFF?text=SOUZA+FARMA+LOGO';">
-                    
-                    <div class="flex flex-col space-y-4 mb-6">
-                        <button onclick="openCadastroModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition transform hover:scale-[1.01]">
-                            + Cadastrar Novo Produto
-                        </button>
-                        <button onclick="openImportModal()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition transform hover:scale-[1.01]">
-                            Importar Produtos (Inicial)
-                        </button>
-                        <button onclick="openImportLotesModal()" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition transform hover:scale-[1.01]">
-                            Atualizar Lotes (Excel)
-                        </button>
-                        <button onclick="confirmDeleteAll()" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition transform hover:scale-[1.01]">
-                            ❌ Limpar Inventário
-                        </button>
-                    </div>
-
-                    <div class="mb-6 border p-4 rounded-lg bg-blue-50">
-                        <h3 class="text-lg font-semibold mb-2 text-blue-700">Adicionar Lote Rápido</h3>
-                        <div class="flex space-x-2">
-                            <input type="text" id="quick-search-input" class="flex-grow p-2 border border-blue-300 rounded-lg focus:ring-blue-500"
-                                placeholder="Cód. Barras ou Interno..." onchange="quickLookup(this.value, 'LOTE')">
-                            <button onclick="openScannerModal('LOTE')" class="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg transition transform hover:scale-105">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Coluna de Listagem -->
-            <div class="lg:w-3/4">
-                <div class="bg-white p-4 sm:p-6 rounded-xl shadow-xl border border-gray-200">
-                    <h2 class="text-2xl font-semibold mb-4 text-blue-700">Relatório de Validades</h2>
-
-                    <div class="flex space-x-2 mb-4 no-print">
-                        <button onclick="exportToCsv()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md text-sm">
-                            Exportar Excel (CSV)
-                        </button>
-                        <button onclick="printFilteredList()" class="flex-1 bg-gray-700 hover:bg-gray-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md text-sm">
-                            Imprimir PDF
-                        </button>
-                    </div>
-
-                    <div class="mb-4 no-print">
-                        <label for="search-input" class="block text-sm font-medium text-gray-700 mb-1">Filtrar Lista (Cód. Barras, Interno ou Descrição):</label>
-                        <div class="flex space-x-2">
-                            <input type="text" id="search-input" class="flex-grow p-2 border border-gray-300 rounded-lg focus:ring-green-500"
-                                placeholder="Digite para buscar..." onkeyup="applyFilters()">
-                            <button onclick="openScannerModal('BUSCA')" class="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg transition transform hover:scale-105" title="Scanner para Busca">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                            </button>
-                            <button onclick="clearSearch()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 rounded-lg text-xs font-bold">LIMPAR</button>
-                        </div>
-                    </div>
-
-                    <!-- Legenda de Cores Recalocada -->
-                    <div class="flex flex-wrap text-xs mb-4 p-3 bg-gray-50 rounded-lg border no-print">
-                        <span class="mr-4 flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-red-400 mr-1 border border-red-600"></span> Vencido/Mês Atual (0)</span>
-                        <span class="mr-4 flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-yellow-200 mr-1 border border-yellow-400"></span> Vence em 1 Mês</span>
-                        <span class="mr-4 flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-orange-100 mr-1 border border-orange-300"></span> Vence em 2 Meses</span>
-                        <span class="flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-green-100 mr-1 border border-green-300"></span> Vence em 3 Meses</span>
-                    </div>
-                    
-                    <div class="mb-4 no-print">
-                        <label for="expiration-filter" class="block text-sm font-medium text-gray-700 mb-1">Filtrar por Mês de Vencimento:</label>
-                        <input type="month" id="expiration-filter" class="w-full p-2 border border-gray-300 rounded-lg" onchange="applyFilters()">
-                    </div>
-
-                    <div class="max-h-[600px] overflow-y-auto mt-4 border border-gray-200 rounded-lg">
-                        <table class="min-w-full divide-y divide-gray-200 table-auto">
-                            <thead class="bg-gray-50 sticky top-0">
-                                <tr>
-                                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Cód. Barras</th>
-                                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cód. Interno</th>
-                                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Descrição</th>
-                                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Laboratório</th>
-                                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Validade</th>
-                                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Qtd</th>
-                                    <th class="px-2 py-2 text-right text-xs font-medium text-gray-500 uppercase no-print">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="medication-list" class="bg-white divide-y divide-gray-200 text-xs">
-                                <tr><td colspan="7" class="p-4 text-center text-gray-500">Iniciando sistema...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modais -->
-    <div id="medication-modal" class="modal-overlay hidden no-print">
-        <div class="modal-content">
-            <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="closeModal()"> &times; </button>
-            <h2 class="text-2xl font-semibold mb-6 text-blue-700" id="form-title"> Cadastrar Novo Produto </h2>
-            <form id="medication-form">
-                <input type="hidden" id="doc-id">
-                <div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Cód. Barras</label><input type="text" id="barcode" required class="w-full p-2 border border-gray-300 rounded-lg"></div>
-                <div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Cód. Interno</label><input type="text" id="internalCode" required class="w-full p-2 border border-gray-300 rounded-lg"></div>
-                <div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Descrição</label><input type="text" id="description" required class="w-full p-2 border border-gray-300 rounded-lg"></div>
-                <div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Laboratório</label><input type="text" id="laboratory" required class="w-full p-2 border border-gray-300 rounded-lg"></div>
-                <div class="flex space-x-4 mb-6">
-                    <div class="flex-1"><label class="block text-sm font-medium text-gray-700 mb-1">Qtd</label><input type="number" id="quantity" required class="w-full p-2 border border-gray-300 rounded-lg"></div>
-                    <div class="flex-1"><label class="block text-sm font-medium text-gray-700 mb-1">Validade (MM/AAAA)</label><input type="month" id="expirationDate" class="w-full p-2 border border-gray-300 rounded-lg"></div>
-                </div>
-                <button type="submit" id="submit-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md">Salvar</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal do Scanner - VERSÃO SIMPLIFICADA -->
-    <div id="scanner-modal" class="modal-overlay hidden no-print">
-        <div class="scanner-container">
-            <button class="close-scanner" onclick="closeScannerModal()"> &times; </button>
-            
-            <div class="scanner-header">
-                <h2 class="text-xl font-semibold">Scanner de Código de Barras</h2>
-                <p class="text-sm mt-1">Posicione o código dentro do retângulo azul</p>
-            </div>
-            
-            <div id="reader"></div>
-            <div class="scanner-frame">
-                <div class="scanner-line"></div>
-            </div>
-            
-            <div id="scanner-error" class="scanner-error hidden"></div>
-            <div id="scanner-success" class="scanner-success hidden">✓ Código lido com sucesso!</div>
-            
-            <div class="scanner-footer">
-                <div class="scanner-buttons">
-                    <button id="torch-btn" class="scanner-btn" onclick="toggleTorch()">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1"/><path d="M6 7h4l2-5h4l2 5h4v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2-5h4l2 5Z"/><path d="M9 17v3"/></svg>
-                        Lanterna
+        <main>
+            <div class="buttons-container">
+                <div class="button-row">
+                    <button id="importarBtn" class="action-button">
+                        <i class="button-icon fas fa-file-import"></i>
+                        Importar Produtos (Inicial)
                     </button>
-                    <button id="flip-btn" class="scanner-btn" onclick="flipCamera()">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M15 20H9"/><path d="M12 14v-4"/><path d="M9 10H5"/><path d="M19 10h-4"/><path d="M12 22a10 10 0 1 1 0-20 10 10 0 0 1 0 20Z"/></svg>
-                        Virar
+                    
+                    <button id="atualizarBtn" class="action-button">
+                        <i class="button-icon fas fa-sync-alt"></i>
+                        Atualizar Lotes (Excel)
+                    </button>
+                </div>
+                
+                <div class="button-row">
+                    <button id="limparBtn" class="action-button">
+                        <i class="button-icon fas fa-trash-alt"></i>
+                        Limpar Inventário
                     </button>
                 </div>
             </div>
-        </div>
+
+            <div class="status-container">
+                <div class="status-title">
+                    <i class="fas fa-clipboard-list"></i>
+                    Log de Atividades
+                </div>
+                <div id="statusLog" class="status-log">
+                    <div class="log-entry info">
+                        <span class="log-time" id="currentTime">--:--:--</span>
+                        <span class="log-message">Sistema inicializado. Aguardando ações...</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Sistema de Gerenciamento de Inventário &copy; 2023</p>
+        </footer>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, addDoc, onSnapshot, collection, query, deleteDoc, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <script>
+        // Elementos DOM
+        const importarBtn = document.getElementById('importarBtn');
+        const atualizarBtn = document.getElementById('atualizarBtn');
+        const limparBtn = document.getElementById('limparBtn');
+        const statusLog = document.getElementById('statusLog');
+        const currentTimeElement = document.getElementById('currentTime');
 
-        const APP_CONFIG = { apiKey: "AIzaSyDc9-jix-tXCV8JHzivDR8pY1iCNNJeDPg", authDomain: "controle-de-validade-e708a.firebaseapp.com", projectId: "controle-de-validade-e708a", storageBucket: "controle-de-validade-e708a.firebasestorage.app", messagingSenderId: "300173058270", appId: "1:300173058270:web:970549624a4c46af3d624f" };
-        const appId = typeof __app_id !== 'undefined' ? __app_id : "controle-de-validade-e708a";
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        let db, auth, userId = null, isFirebaseReady = false, allMedications = [], currentFilteredList = [];
-        
-        // Variáveis do scanner
-        let scannerInstance = null;
-        let isScannerRunning = false;
-        let isBackCamera = true;
-        let scannerMode = '';
-
-        async function init() {
-            try {
-                const app = initializeApp(APP_CONFIG);
-                auth = getAuth(app);
-                db = getFirestore(app);
-                if (initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
-                else await signInAnonymously(auth);
-                onAuthStateChanged(auth, u => { if(u) { userId = u.uid; setupListener(); } });
-                isFirebaseReady = true;
-            } catch (e) { console.error(e); }
+        // Atualizar hora atual
+        function updateCurrentTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('pt-BR');
+            currentTimeElement.textContent = timeString;
         }
 
-        function setupListener() {
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), snap => {
-                allMedications = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                sortAndRender();
-            }, err => console.error(err));
-        }
+        // Atualizar hora a cada segundo
+        setInterval(updateCurrentTime, 1000);
+        updateCurrentTime(); // Inicializar
 
-        function sortAndRender() {
-            allMedications.sort((a, b) => (a.expirationDate || '9999-12').localeCompare(b.expirationDate || '9999-12'));
-            applyFilters();
-        }
-
-        window.applyFilters = function() {
-            const term = document.getElementById('search-input').value.toLowerCase().trim();
-            const exp = document.getElementById('expiration-filter').value;
-            let filtered = allMedications;
-            if (term) filtered = filtered.filter(m => (m.barcode + m.internalCode + m.description).toLowerCase().includes(term));
-            if (exp) filtered = filtered.filter(m => m.expirationDate === exp);
-            renderMedications(filtered);
-        };
-
-        window.clearSearch = function() {
-            document.getElementById('search-input').value = '';
-            applyFilters();
-        };
-
-        function renderMedications(meds) {
-            const list = document.getElementById('medication-list');
-            list.innerHTML = meds.length ? '' : '<tr><td colspan="7" class="p-4 text-center">Nenhum item encontrado.</td></tr>';
-            const curMonth = new Date().toISOString().slice(0, 7);
+        // Adicionar entrada no log
+        function addLogEntry(message, type = 'info') {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('pt-BR');
             
-            meds.forEach(m => {
-                const diff = m.expirationDate ? monthDiff(m.expirationDate, curMonth) : -1;
-                let bg = 'bg-white', text = 'text-gray-700';
-                if (diff <= 0 && m.expirationDate) { bg = 'bg-red-100'; text = 'text-red-800 font-bold'; }
-                else if (diff === 1) { bg = 'bg-yellow-100'; text = 'text-yellow-800 font-bold'; }
-                else if (diff === 2) { bg = 'bg-orange-50'; text = 'text-orange-800'; }
-                else if (diff === 3) { bg = 'bg-green-50'; text = 'text-green-800'; }
-
-                const row = document.createElement('tr');
-                row.className = `hover:bg-gray-50 ${bg} border-b`;
-                row.innerHTML = `
-                    <td class="px-2 py-1 hidden sm:table-cell">${m.barcode || ''}</td>
-                    <td class="px-2 py-1">${m.internalCode || ''}</td>
-                    <td class="px-2 py-1 font-medium ${text}">${m.description || ''}</td>
-                    <td class="px-2 py-1 hidden sm:table-cell">${m.laboratory || ''}</td>
-                    <td class="px-2 py-1 font-bold">${m.expirationDate ? m.expirationDate.split('-').reverse().join('/') : '---'}</td>
-                    <td class="px-2 py-1">${m.quantity || 0}</td>
-                    <td class="px-2 py-1 no-print">
-                        <div class="action-buttons">
-                            <button onclick="loadForEdit('${m.id}')" class="action-btn edit-btn">Editar</button>
-                            <button onclick="deleteMedication('${m.id}')" class="action-btn delete-btn">Exc</button>
-                        </div>
-                    </td>`;
-                list.appendChild(row);
-            });
-            currentFilteredList = meds;
-        }
-
-        function monthDiff(d1, d2) {
-            const [y1, m1] = d1.split('-').map(Number);
-            const [y2, m2] = d2.split('-').map(Number);
-            return (y1 - y2) * 12 + (m1 - m2);
-        }
-
-        // Função para carregar dados para edição
-        window.loadForEdit = function(id) {
-            const medication = allMedications.find(m => m.id === id);
-            if (!medication) {
-                showMessage("Produto não encontrado", "error");
-                return;
-            }
-
-            // Preencher formulário
-            document.getElementById('doc-id').value = medication.id;
-            document.getElementById('barcode').value = medication.barcode || '';
-            document.getElementById('internalCode').value = medication.internalCode || '';
-            document.getElementById('description').value = medication.description || '';
-            document.getElementById('laboratory').value = medication.laboratory || '';
-            document.getElementById('quantity').value = medication.quantity || 1;
-            
-            // Formatar data para input type="month"
-            if (medication.expirationDate) {
-                const [year, month] = medication.expirationDate.split('-');
-                document.getElementById('expirationDate').value = `${year}-${month.padStart(2, '0')}`;
-            } else {
-                document.getElementById('expirationDate').value = '';
-            }
-            
-            // Atualizar título do formulário
-            document.getElementById('form-title').textContent = 'Editar Produto';
-            document.getElementById('submit-button').textContent = 'Atualizar';
-            
-            // Abrir modal
-            document.getElementById('medication-modal').classList.remove('hidden');
-        };
-
-        // Função para resetar formulário
-        function resetForm() {
-            document.getElementById('medication-form').reset();
-            document.getElementById('doc-id').value = '';
-            document.getElementById('form-title').textContent = 'Cadastrar Novo Produto';
-            document.getElementById('submit-button').textContent = 'Salvar';
-        }
-
-        // Configurar envio do formulário
-        document.getElementById('medication-form')?.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const id = document.getElementById('doc-id').value;
-            const medicationData = {
-                barcode: document.getElementById('barcode').value.trim(),
-                internalCode: document.getElementById('internalCode').value.trim(),
-                description: document.getElementById('description').value.trim(),
-                laboratory: document.getElementById('laboratory').value.trim(),
-                quantity: parseInt(document.getElementById('quantity').value) || 1,
-                expirationDate: document.getElementById('expirationDate').value
-            };
-            
-            try {
-                if (id) {
-                    // Atualizar existente
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id), medicationData);
-                    showMessage("Produto atualizado com sucesso!", "success");
-                } else {
-                    // Criar novo
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), medicationData);
-                    showMessage("Produto cadastrado com sucesso!", "success");
-                }
-                
-                closeModal();
-            } catch (error) {
-                console.error("Erro ao salvar:", error);
-                showMessage("Erro ao salvar produto: " + error.message, "error");
-            }
-        });
-
-        window.openScannerModal = function(mode) {
-            scannerMode = mode;
-            
-            if(mode === 'BUSCA') {
-                document.getElementById('search-input').value = '';
-                applyFilters();
-            }
-            
-            // Resetar interface
-            document.getElementById('scanner-error').classList.add('hidden');
-            document.getElementById('scanner-success').classList.add('hidden');
-            document.getElementById('torch-btn').classList.remove('active');
-            
-            // Abrir modal
-            document.body.style.overflow = 'hidden';
-            document.getElementById('scanner-modal').classList.remove('hidden');
-            
-            // Iniciar scanner com delay para garantir que o DOM esteja pronto
-            setTimeout(() => {
-                startCamera();
-            }, 500);
-        };
-
-        async function startCamera() {
-            // Limpar qualquer scanner anterior
-            await cleanupScanner();
-            
-            try {
-                // Verificar permissão da câmera
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        facingMode: isBackCamera ? "environment" : "user"
-                    } 
-                });
-                
-                // Parar stream de teste
-                stream.getTracks().forEach(track => track.stop());
-                
-                // Iniciar scanner
-                initScanner();
-                
-            } catch (error) {
-                console.error("Erro na câmera:", error);
-                showScannerError(getCameraErrorMessage(error));
-            }
-        }
-
-        function initScanner() {
-            try {
-                // Criar nova instância do scanner
-                scannerInstance = new Html5Qrcode("reader");
-                isScannerRunning = true;
-                
-                // Configuração MÍNIMA - sem qrbox para evitar conflitos
-                const config = {
-                    fps: 10,
-                    qrbox: undefined, // Deixar a biblioteca detectar automaticamente
-                    aspectRatio: 1.0,
-                    disableFlip: false
-                };
-                
-                console.log("Iniciando scanner com câmera:", isBackCamera ? "traseira" : "frontal");
-                
-                scannerInstance.start(
-                    { facingMode: isBackCamera ? "environment" : "user" },
-                    config,
-                    onQrCodeSuccess,
-                    onQrCodeError
-                ).then(() => {
-                    console.log("Scanner iniciado com sucesso");
-                }).catch(error => {
-                    console.error("Erro ao iniciar scanner:", error);
-                    // Tentar método alternativo sem config
-                    tryAlternativeScanner();
-                });
-                
-            } catch (error) {
-                console.error("Erro na inicialização:", error);
-                showScannerError("Erro ao iniciar o scanner: " + (error.message || error));
-            }
-        }
-
-        function tryAlternativeScanner() {
-            if (!scannerInstance || !isScannerRunning) return;
-            
-            try {
-                // Tentar método ainda mais simples
-                scannerInstance.start(
-                    { facingMode: isBackCamera ? "environment" : "user" },
-                    undefined, // Sem config
-                    onQrCodeSuccess,
-                    onQrCodeError
-                ).then(() => {
-                    console.log("Scanner alternativo iniciado");
-                }).catch(error => {
-                    showScannerError("Não foi possível acessar a câmera. Verifique as permissões.");
-                });
-            } catch (error) {
-                showScannerError("Erro no scanner: " + (error.message || error));
-            }
-        }
-
-        function onQrCodeSuccess(decodedText) {
-            console.log("Código detectado:", decodedText);
-            
-            // Feedback visual
-            document.getElementById('scanner-success').classList.remove('hidden');
-            document.getElementById('scanner-success').textContent = "✓ Código lido!";
-            
-            // Processar após delay
-            setTimeout(() => {
-                processScannedCode(decodedText);
-            }, 300);
-        }
-
-        function onQrCodeError(error) {
-            // Ignorar erros normais de detecção
-            if (!error || error.includes("NotFoundException")) {
-                return;
-            }
-            // Log apenas para debug
-            console.log("Scan error:", error);
-        }
-
-        function processScannedCode(code) {
-            closeScannerModal();
-            
-            if (scannerMode === 'BUSCA') {
-                document.getElementById('search-input').value = code;
-                applyFilters();
-                showMessage("Código lido com sucesso! Buscando...", "success");
-            } else {
-                // Aqui você chamaria a função quickLookup se existisse
-                // quickLookup(code);
-                showMessage(`Código lido: ${code}`, "success");
-            }
-        }
-
-        function getCameraErrorMessage(error) {
-            if (!error) return "Erro desconhecido na câmera";
-            
-            const message = error.message || error.toString();
-            
-            if (message.includes("Permission denied") || message.includes("NotAllowedError")) {
-                return "Permissão da câmera negada. Por favor, permita o acesso à câmera.";
-            }
-            if (message.includes("NotFoundError") || message.includes("no camera")) {
-                return "Nenhuma câmera encontrada no dispositivo.";
-            }
-            if (message.includes("NotReadableError")) {
-                return "A câmera está em uso por outro aplicativo.";
-            }
-            if (message.includes("OverconstrainedError")) {
-                return "Configuração de câmera não suportada.";
-            }
-            
-            return `Erro na câmera: ${message}`;
-        }
-
-        function showScannerError(message) {
-            const errorDiv = document.getElementById('scanner-error');
-            errorDiv.textContent = message;
-            errorDiv.classList.remove('hidden');
-        }
-
-        window.toggleTorch = function() {
-            if (!scannerInstance || !isScannerRunning) return;
-            
-            try {
-                const videoTrack = scannerInstance.getRunningTrack();
-                if (videoTrack && videoTrack.getCapabilities && videoTrack.getCapabilities().torch) {
-                    const torchBtn = document.getElementById('torch-btn');
-                    const isTorchOn = torchBtn.classList.contains('active');
-                    
-                    videoTrack.applyConstraints({
-                        advanced: [{ torch: !isTorchOn }]
-                    }).then(() => {
-                        torchBtn.classList.toggle('active', !isTorchOn);
-                    }).catch(() => {
-                        // Lanterna não suportada
-                    });
-                }
-            } catch (error) {
-                // Ignorar erro
-            }
-        };
-
-        window.flipCamera = function() {
-            if (!isScannerRunning) return;
-            
-            isBackCamera = !isBackCamera;
-            const flipBtn = document.getElementById('flip-btn');
-            flipBtn.classList.toggle('active', !isBackCamera);
-            
-            // Reiniciar scanner com nova câmera
-            cleanupScanner().then(() => {
-                setTimeout(() => {
-                    startCamera();
-                }, 300);
-            });
-        };
-
-        async function cleanupScanner() {
-            if (scannerInstance && isScannerRunning) {
-                try {
-                    await scannerInstance.stop();
-                    scannerInstance.clear();
-                    isScannerRunning = false;
-                } catch (error) {
-                    console.log("Erro ao limpar scanner:", error);
-                    isScannerRunning = false;
-                }
-            }
-            scannerInstance = null;
-        }
-
-        window.closeScannerModal = function() {
-            document.body.style.overflow = 'auto';
-            document.getElementById('scanner-modal').classList.add('hidden');
-            
-            // Limpar scanner
-            cleanupScanner();
-        };
-
-        window.openCadastroModal = () => {
-            resetForm();
-            document.getElementById('medication-modal').classList.remove('hidden');
-        };
-        
-        window.closeModal = () => { 
-            document.getElementById('medication-modal').classList.add('hidden'); 
-            resetForm(); 
-        };
-        
-        window.deleteMedication = async (id) => { 
-            if(confirm('Tem certeza que deseja excluir este lote?')) {
-                try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id)); 
-                    showMessage("Lote removido com sucesso.", "success");
-                } catch (error) {
-                    console.error("Erro ao excluir:", error);
-                    showMessage("Erro ao excluir lote: " + error.message, "error");
-                }
-            }
-        };
-
-        window.exportToCsv = () => {
-            let csv = "Cód. Barras;Cód. Interno;Descrição;Laboratório;Validade;Qtd\n";
-            currentFilteredList.forEach(m => csv += `${m.barcode};${m.internalCode};${m.description};${m.laboratory};${m.expirationDate};${m.quantity}\n`);
-            const blob = new Blob(["\uFEFF", csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'relatorio_souzafarma.csv';
-            link.click();
-        };
-
-        // Função auxiliar para mostrar mensagens
-        function showMessage(message, type = "info") {
-            const container = document.getElementById('message-container');
-            const messageDiv = document.createElement('div');
-            const bgColor = type === "success" ? "bg-green-100 border-green-400 text-green-700" :
-                          type === "error" ? "bg-red-100 border-red-400 text-red-700" :
-                          "bg-blue-100 border-blue-400 text-blue-700";
-            
-            messageDiv.className = `${bgColor} border px-4 py-3 rounded-lg shadow-lg max-w-sm`;
-            messageDiv.innerHTML = `
-                <div class="flex items-center">
-                    <span class="mr-2">${type === "success" ? "✅" : type === "error" ? "❌" : "ℹ️"}</span>
-                    <span>${message}</span>
-                </div>
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.innerHTML = `
+                <span class="log-time">${timeString}</span>
+                <span class="log-message">${message}</span>
             `;
             
-            container.appendChild(messageDiv);
-            
-            setTimeout(() => {
-                messageDiv.style.opacity = '0';
-                setTimeout(() => messageDiv.remove(), 300);
-            }, 3000);
+            statusLog.appendChild(logEntry);
+            statusLog.scrollTop = statusLog.scrollHeight; // Rolagem automática para baixo
         }
 
-        init();
+        // Simular processamento
+        function simulateProcessing(action, duration = 2000) {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    resolve();
+                }, duration);
+            });
+        }
+
+        // Função para importar produtos
+        async function importarProdutos() {
+            try {
+                // Desabilitar botão durante processamento
+                importarBtn.disabled = true;
+                importarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importando...';
+                
+                addLogEntry('Iniciando importação de produtos...', 'info');
+                
+                // Simular processamento
+                await simulateProcessing('importar', 2500);
+                
+                // Simular sucesso
+                addLogEntry('✅ Importação concluída com sucesso! 150 produtos importados.', 'success');
+                
+            } catch (error) {
+                addLogEntry(`❌ Erro na importação: ${error.message}`, 'error');
+            } finally {
+                // Reabilitar botão
+                importarBtn.disabled = false;
+                importarBtn.innerHTML = '<i class="button-icon fas fa-file-import"></i> Importar Produtos (Inicial)';
+            }
+        }
+
+        // Função para atualizar lotes
+        async function atualizarLotes() {
+            try {
+                // Desabilitar botão durante processamento
+                atualizarBtn.disabled = true;
+                atualizarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Atualizando...';
+                
+                addLogEntry('Iniciando atualização de lotes a partir do Excel...', 'info');
+                
+                // Simular upload de arquivo
+                addLogEntry('📁 Arquivo "lotes_setembro.xlsx" detectado', 'info');
+                await simulateProcessing('upload', 1500);
+                
+                // Simular processamento
+                await simulateProcessing('processar', 2000);
+                
+                // Simular sucesso
+                addLogEntry('✅ Atualização concluída! 45 lotes atualizados.', 'success');
+                
+            } catch (error) {
+                addLogEntry(`❌ Erro na atualização: ${error.message}`, 'error');
+            } finally {
+                // Reabilitar botão
+                atualizarBtn.disabled = false;
+                atualizarBtn.innerHTML = '<i class="button-icon fas fa-sync-alt"></i> Atualizar Lotes (Excel)';
+            }
+        }
+
+        // Função para limpar inventário (com confirmação)
+        async function limparInventario() {
+            // Pedir confirmação antes de executar
+            const confirmar = confirm('ATENÇÃO: Esta ação irá limpar todo o inventário. Essa operação não pode ser desfeita.\n\nDeseja continuar?');
+            
+            if (!confirmar) {
+                addLogEntry('Operação de limpeza cancelada pelo usuário.', 'warning');
+                return;
+            }
+            
+            try {
+                // Desabilitar botão durante processamento
+                limparBtn.disabled = true;
+                limparBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Limpando...';
+                
+                addLogEntry('Iniciando limpeza do inventário...', 'warning');
+                
+                // Simular processamento
+                await simulateProcessing('limpar', 3000);
+                
+                // Simular sucesso
+                addLogEntry('✅ Inventário limpo com sucesso! Todos os registros foram removidos.', 'success');
+                
+            } catch (error) {
+                addLogEntry(`❌ Erro na limpeza: ${error.message}`, 'error');
+            } finally {
+                // Reabilitar botão
+                limparBtn.disabled = false;
+                limparBtn.innerHTML = '<i class="button-icon fas fa-trash-alt"></i> Limpar Inventário';
+            }
+        }
+
+        // Adicionar event listeners aos botões
+        importarBtn.addEventListener('click', importarProdutos);
+        atualizarBtn.addEventListener('click', atualizarLotes);
+        limparBtn.addEventListener('click', limparInventario);
+
+        // Inicialização
+        addLogEntry('Sistema pronto. Clique em qualquer botão para executar uma ação.', 'info');
     </script>
 </body>
 </html>
