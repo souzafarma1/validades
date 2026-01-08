@@ -17,6 +17,13 @@
         .logo-img { max-width: 220px; height: auto; margin: 0 auto 1.5rem; display: block; border-radius: 0.5rem; }
         #reader { width: 100% !important; border: none !important; border-radius: 0.5rem; overflow: hidden; background: #000; }
         #reader__dashboard { display: none !important; }
+        
+        /* Estilos específicos da Tabela (Foto 1) */
+        .table-header-text { font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+        .desc-text { color: #78350f; font-weight: 500; text-transform: uppercase; }
+        .barcode-text { color: #9ca3af; font-size: 13px; }
+        .action-link { font-weight: 700; font-size: 13px; cursor: pointer; display: block; text-align: right; }
+        
         @media print { .no-print { display: none !important; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 8px; font-size: 10pt; } }
     </style>
 </head>
@@ -45,9 +52,6 @@
                         <button onclick="window.openImportModal()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition active:scale-95">
                             Importar Produtos em Massa
                         </button>
-                        <button onclick="window.openImportLotesModal()" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition active:scale-95">
-                            Atualizar Lotes (Excel)
-                        </button>
                         <button onclick="window.confirmDeleteAll()" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition active:scale-95 text-xs">
                             ❌ Excluir TODO o Inventário
                         </button>
@@ -66,7 +70,7 @@
                 </div>
             </div>
 
-            <!-- Tabela de Produtos (Estilo Foto 1) -->
+            <!-- Tabela de Produtos (Fidelidade à Foto 1) -->
             <div class="lg:w-3/4">
                 <div class="bg-white p-6 rounded-xl shadow-xl border border-gray-200">
                     <div class="flex justify-between items-center mb-6">
@@ -98,15 +102,15 @@
 
                     <div class="overflow-x-auto border border-gray-200 rounded-lg">
                         <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-100 sticky top-0 text-[11px] text-gray-500 uppercase font-black">
+                            <thead class="bg-gray-50 sticky top-0">
                                 <tr>
-                                    <th class="px-4 py-3 text-left">Cód. Barras</th>
-                                    <th class="px-4 py-3 text-left">Cód. Interno</th>
-                                    <th class="px-4 py-3 text-left">Descrição</th>
-                                    <th class="px-4 py-3 text-left">Laboratório</th>
-                                    <th class="px-4 py-3 text-left">Validade</th>
-                                    <th class="px-4 py-3 text-center">Qtd</th>
-                                    <th class="px-4 py-3 text-right no-print">Ações</th>
+                                    <th class="px-4 py-3 text-left table-header-text">Cód. Barras</th>
+                                    <th class="px-4 py-3 text-left table-header-text">Cód. Interno</th>
+                                    <th class="px-4 py-3 text-left table-header-text">Descrição</th>
+                                    <th class="px-4 py-3 text-left table-header-text">Laboratório</th>
+                                    <th class="px-4 py-3 text-left table-header-text">Validade</th>
+                                    <th class="px-4 py-3 text-center table-header-text">Qtd</th>
+                                    <th class="px-4 py-3 text-right table-header-text no-print">Ações</th>
                                 </tr>
                             </thead>
                             <tbody id="medication-list" class="bg-white divide-y divide-gray-200 text-sm">
@@ -216,7 +220,11 @@
             renderTable(filtered);
         };
 
-        window.clearSearch = () => { document.getElementById('search-input').value = ''; window.applyFilters(); };
+        window.clearSearch = () => { 
+            const input = document.getElementById('search-input');
+            if (input) input.value = ''; 
+            window.applyFilters(); 
+        };
 
         function renderTable(meds) {
             const list = document.getElementById('medication-list');
@@ -226,25 +234,25 @@
             
             meds.forEach(m => {
                 const diff = m.expirationDate ? monthDiff(m.expirationDate, now) : -1;
-                let bg = 'bg-white', textStyle = 'text-gray-800';
+                let bg = 'bg-white';
                 
-                if (diff <= 0 && m.expirationDate) { bg = 'bg-red-50'; textStyle = 'text-red-700 font-bold'; }
-                else if (diff === 1) { bg = 'bg-yellow-50'; textStyle = 'text-yellow-700 font-bold'; }
-                else if (diff === 2) { bg = 'bg-orange-50'; textStyle = 'text-orange-700 font-medium'; }
-                else if (diff === 3) { bg = 'bg-green-50'; textStyle = 'text-green-700 font-medium'; }
+                if (diff <= 0 && m.expirationDate) bg = 'bg-red-50';
+                else if (diff === 1) bg = 'bg-yellow-50';
+                else if (diff === 2) bg = 'bg-orange-50';
+                else if (diff === 3) bg = 'bg-green-50';
 
                 const row = document.createElement('tr');
-                row.className = `hover:bg-gray-50 border-b border-gray-100 ${bg}`;
+                row.className = `hover:bg-gray-100 border-b border-gray-200 transition-colors ${bg}`;
                 row.innerHTML = `
-                    <td class="px-4 py-4 text-xs text-gray-400 font-mono">${m.barcode}</td>
-                    <td class="px-4 py-4 font-black text-gray-800">${m.internalCode}</td>
-                    <td class="px-4 py-4 ${textStyle}">${m.description}</td>
-                    <td class="px-4 py-4 text-gray-500 font-bold">${m.laboratory}</td>
-                    <td class="px-4 py-4 font-black text-gray-900">${m.expirationDate ? m.expirationDate.split('-').reverse().join('/') : '---'}</td>
-                    <td class="px-4 py-4 text-center font-black text-gray-900">${m.quantity}</td>
-                    <td class="px-4 py-4 text-right no-print leading-relaxed">
-                        <button onclick="window.loadForEdit('${m.id}')" class="text-blue-600 font-bold hover:underline block w-full text-right">Editar</button>
-                        <button onclick="window.deleteMedication('${m.id}')" class="text-red-600 font-bold hover:underline block w-full text-right mt-1">Excluir</button>
+                    <td class="px-4 py-4 barcode-text">${m.barcode}</td>
+                    <td class="px-4 py-4 font-bold text-gray-900">${m.internalCode}</td>
+                    <td class="px-4 py-4 desc-text">${m.description}</td>
+                    <td class="px-4 py-4 text-gray-600 font-bold">${m.laboratory}</td>
+                    <td class="px-4 py-4 font-bold text-gray-900">${m.expirationDate ? m.expirationDate.split('-').reverse().join('/') : '---'}</td>
+                    <td class="px-4 py-4 text-center font-bold text-gray-900">${m.quantity}</td>
+                    <td class="px-4 py-4 text-right no-print">
+                        <span onclick="window.loadForEdit('${m.id}')" class="action-link text-blue-600 mb-1">Editar</span>
+                        <span onclick="window.deleteMedication('${m.id}')" class="action-link text-red-600">Excluir</span>
                     </td>`;
                 list.appendChild(row);
             });
@@ -254,10 +262,10 @@
         function monthDiff(d1, d2) {
             const [y1, m1] = d1.split('-').map(Number);
             const [y2, m2] = d2.split('-').map(Number);
-            return (y1 - y2) * 12 + (m1 - m2);
+            return (y1 - y2) * 12 + (month1 - month2);
         }
 
-        // --- SCANNER OTIMIZADO ---
+        // --- SCANNER OTIMIZADO PARA IPHONE 7/12 ---
         window.openScannerModal = function(mode) {
             window.scannerMode = mode;
             if(mode === 'BUSCA') window.clearSearch();
@@ -267,7 +275,7 @@
                 fps: 25, 
                 qrbox: (w, h) => {
                     let width = w * 0.9, height = Math.min(w, h) * 0.28;
-                    if (width > 400) width = 400; if (height < 120) height = 120;
+                    if (width > 450) width = 450; if (height < 120) height = 120;
                     return { width: width, height: height };
                 },
                 aspectRatio: 1.0,
@@ -296,9 +304,9 @@
                 document.getElementById('internalCode').value = found.internalCode;
                 document.getElementById('description').value = found.description;
                 document.getElementById('laboratory').value = found.laboratory;
-                document.getElementById('form-title').textContent = "Novo Lote";
+                document.getElementById('form-title').textContent = "Lançar Novo Lote";
                 document.getElementById('barcode').disabled = true;
-            } else { window.showMessage("Não localizado.", "error"); }
+            } else { window.showMessage("Produto não localizado.", "error"); }
         };
 
         window.loadForEdit = (id) => {
@@ -317,7 +325,7 @@
             }
         };
 
-        window.deleteMedication = async (id) => { if(confirm('Excluir este lote permanentemente?')) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id)); };
+        window.deleteMedication = async (id) => { if(confirm('Eliminar este lote permanentemente?')) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id)); };
 
         window.confirmDeleteAll = async () => {
             if(confirm('🛑 ATENÇÃO: Deseja apagar TODO o inventário?')) {
@@ -333,7 +341,7 @@
             const b = new Blob(["\uFEFF", c], { type: 'text/csv;charset=utf-8;' });
             const l = document.createElement('a');
             l.href = URL.createObjectURL(b);
-            l.download = 'farmacia_lotes.csv';
+            l.download = 'souzafarma_relatorio.csv';
             l.click();
         };
 
@@ -354,7 +362,7 @@
             if(id) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id), data);
             else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), data);
             window.closeModal();
-            window.showMessage("Salvo!");
+            window.showMessage("Sucesso!");
         };
 
         window.showMessage = (text, type = 'success') => {
