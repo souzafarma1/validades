@@ -18,35 +18,27 @@
         #reader { width: 100% !important; border: none !important; border-radius: 0.5rem; overflow: hidden; background: #000; }
         #reader__dashboard { display: none !important; }
         
-        /* ESTILO DA TABELA - TEXTO 100% PRETO */
+        /* ESTILO DA TABELA - TUDO EM PRETO */
         .table-header-text { font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #f3f4f6; padding: 12px 8px; }
         
-        /* Classe para garantir que todo o conteúdo da linha seja preto */
+        /* Texto das linhas em Preto Sólido */
         .row-text-black { color: #000000 !important; font-weight: 700; font-size: 13px; text-transform: uppercase; line-height: 1.2; }
         .barcode-cell { color: #000000 !important; font-size: 12px; font-family: sans-serif; font-weight: 400; }
         
         .action-link { font-weight: 700; font-size: 12px; cursor: pointer; white-space: nowrap; }
         .action-link:hover { text-decoration: underline; }
 
-        /* Barra de rolagem na tela */
+        /* Barra de rolagem ativa */
         .scroll-container { max-height: 65vh; overflow-y: auto; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 0.5rem; border: 1px solid #e5e7eb; }
         
-        /* IMPRESSÃO PDF PAISAGEM SEM CORTES */
         @media print {
             @page { size: landscape; margin: 0.5cm; }
             .no-print { display: none !important; }
             body { background: white !important; padding: 0 !important; }
-            .container { max-width: 100% !important; width: 100% !important; padding: 0 !important; margin: 0 !important; }
+            .container { max-width: 100% !important; width: 100% !important; padding: 0 !important; }
             .scroll-container { max-height: none !important; overflow: visible !important; border: none !important; }
-            table { width: 100% !important; border-collapse: collapse !important; table-layout: auto !important; }
-            th, td { 
-                border: 1px solid #ddd !important; 
-                padding: 6px !important; 
-                font-size: 9pt !important; 
-                color: black !important;
-                white-space: normal !important; 
-                word-wrap: break-word !important;
-            }
+            table { width: 100% !important; border-collapse: collapse !important; }
+            th, td { border: 1px solid #ddd !important; padding: 6px !important; font-size: 9pt !important; color: black !important; white-space: normal !important; word-wrap: break-word !important; }
             .bg-red-50 { background-color: #fef2f2 !important; -webkit-print-color-adjust: exact; }
             .bg-yellow-50 { background-color: #fefce8 !important; -webkit-print-color-adjust: exact; }
             .bg-orange-50 { background-color: #fff7ed !important; -webkit-print-color-adjust: exact; }
@@ -143,7 +135,7 @@
                                     <th class="px-4 py-3 text-right table-header-text no-print">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody id="medication-list" class="bg-white divide-y divide-gray-100">
+                            <tbody id="medication-list" class="bg-white divide-y divide-gray-200">
                                 <tr><td colspan="7" class="p-20 text-center text-gray-400 italic font-semibold animate-pulse">Sincronizando dados...</td></tr>
                             </tbody>
                         </table>
@@ -237,20 +229,14 @@
                         startSync(); 
                     } 
                 });
-            } catch (e) { 
-                console.error("Firebase Error:", e); 
-                document.getElementById('db-status').textContent = "❌ Falha na Conexão";
-            }
+            } catch (e) { console.error(e); }
         }
 
         function startSync() {
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), snap => {
                 allMedications = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                // Força a renderização sem depender do evento keyup
-                const inp = document.getElementById('search-input');
-                const term = (inp && inp.value) ? inp.value.toLowerCase().trim() : "";
-                if (!term) renderList(allMedications);
-                else window.applyFilters();
+                // Força a renderização imediata, mesmo se o filtro estiver vazio
+                window.applyFilters();
             });
         }
 
@@ -321,15 +307,17 @@
         }
 
         function monthDiff(d1, d2) {
-            const [y1, m1] = d1.split('-').map(Number);
-            const [y2, m2] = d2.split('-').map(Number);
-            return (y1 - y2) * 12 + (month1 - month2);
+            try {
+                const [y1, m1] = d1.split('-').map(Number);
+                const [y2, m2] = d2.split('-').map(Number);
+                return (y1 - y2) * 12 + (m1 - m2);
+            } catch(e) { return -1; }
         }
 
         // --- SCANNER OTIMIZADO ---
         window.openScannerModal = function(mode) {
             window.scannerMode = mode;
-            if(mode === 'BUSCA') window.clearSearch();
+            // Corrigido: Não limpa a busca ao abrir para não sumir a tabela antes da leitura
             document.getElementById('scanner-modal').classList.remove('hidden');
             html5QrCode = new Html5Qrcode("reader");
             const config = { 
@@ -339,7 +327,7 @@
                     if (width > 420) width = 420; if (height < 120) height = 120;
                     return { width: width, height: height };
                 },
-                supportedScanTypes: [Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.CODE_39],
+                supportedScanTypes: [Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.EAN_13],
                 videoConstraints: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
             };
             html5QrCode.start({ facingMode: "environment" }, config, (text) => {
@@ -369,7 +357,7 @@
                 document.getElementById('laboratory').value = found.laboratory;
                 document.getElementById('form-title').textContent = "Adicionar Novo Lote";
                 document.getElementById('barcode').disabled = true;
-            } else { window.showMessage("Produto não localizado.", "error"); }
+            } else { window.showMessage("Não localizado.", "error"); }
         };
 
         window.loadForEdit = (id) => {
