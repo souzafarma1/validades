@@ -18,17 +18,15 @@
         #reader { width: 100% !important; border: none !important; border-radius: 0.5rem; overflow: hidden; background: #000; }
         #reader__dashboard { display: none !important; }
         
-        /* ESTILO DA TABELA - TUDO EM PRETO */
+        /* ESTILO DA TABELA - TEXTO 100% PRETO */
         .table-header-text { font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #f3f4f6; padding: 12px 8px; }
-        
-        /* Texto das linhas em Preto Sólido */
         .row-text-black { color: #000000 !important; font-weight: 700; font-size: 13px; text-transform: uppercase; line-height: 1.2; }
         .barcode-cell { color: #000000 !important; font-size: 12px; font-family: sans-serif; font-weight: 400; }
         
         .action-link { font-weight: 700; font-size: 12px; cursor: pointer; white-space: nowrap; }
         .action-link:hover { text-decoration: underline; }
 
-        /* Barra de rolagem ativa */
+        /* Barra de rolagem na tela */
         .scroll-container { max-height: 65vh; overflow-y: auto; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 0.5rem; border: 1px solid #e5e7eb; }
         
         @media print {
@@ -62,7 +60,7 @@
                 <div class="bg-white p-6 rounded-xl shadow-xl border border-gray-200 text-center">
                     <img src="https://raw.githubusercontent.com/souzaimportadosslz-bot/controledevalidades/main/souza_farma_logo.png" 
                          alt="Souza Farma" class="logo-img"
-                         onerror="this.onerror=null; this.src='https://placehold.co/200x80/cc0000/ffffff?text=Souza+Farma';">
+                         onerror="this.onerror=null; this.src='https://placehold.co/600x200/DC3545/FFFFFF?text=SOUZA+FARMA';">
                     
                     <div class="flex flex-col space-y-3">
                         <button onclick="window.openCadastroModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow transition active:scale-95">
@@ -167,12 +165,17 @@
         </div>
     </div>
 
-    <!-- Modais Importação -->
+    <!-- Modais de Importação -->
     <div id="import-modal" class="modal-overlay hidden no-print">
         <div class="modal-content shadow-2xl">
             <button class="absolute top-4 right-4 text-gray-400 text-2xl" onclick="window.closeImportModal()">&times;</button>
             <h2 class="text-xl font-bold mb-4 text-purple-700 uppercase tracking-tight">Importação Inicial</h2>
+            <div class="bg-purple-50 p-4 rounded-lg border border-purple-100 mb-4 text-xs text-purple-800 leading-relaxed">
+                Ordem recomendada: <b>Barras, Interno, Nome, Lab, Validade, Qtd</b>.<br>
+                Formatos aceitos para Validade: "dez-25", "12/2025" ou "2025-12".
+            </div>
             <input type="file" id="bulk-file-input" accept=".csv, .tsv" class="w-full p-3 border rounded-xl bg-gray-50 mb-4 text-sm">
+            <label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Separador do Arquivo:</label>
             <select id="delimiter-select" class="w-full p-3 border-none bg-gray-50 rounded-xl mb-6 text-sm shadow-inner"><option value=";">Ponto e Vírgula (;)</option><option value=",">Vírgula (,)</option><option value="\t">Tabulação (TSV)</option></select>
             <button onclick="window.handleBulkImport()" class="w-full bg-purple-600 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition">Processar Planilha</button>
         </div>
@@ -182,8 +185,12 @@
         <div class="modal-content shadow-2xl">
             <button class="absolute top-4 right-4 text-gray-400 text-2xl" onclick="window.closeImportLotesModal()">&times;</button>
             <h2 class="text-xl font-bold mb-4 text-orange-700 uppercase tracking-tight">Atualizar Lotes (Excel)</h2>
+            <div class="bg-orange-50 p-4 rounded-lg border border-orange-100 mb-4 text-xs text-orange-800">
+                A ordem deve ser: <b>Barras, Interno, Nome, Lab, Validade, Qtd</b>.
+            </div>
             <input type="file" id="bulk-lotes-file-input" accept=".csv, .tsv" class="w-full p-3 border rounded-xl bg-gray-50 mb-4 text-sm">
-            <select id="delimiter-lotes-select" class="w-full p-2 border rounded-lg bg-gray-50 text-sm mb-4"><option value=";">Ponto e Vírgula (;)</option><option value=",">Vírgula (,)</option></select>
+            <label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Separador:</label>
+            <select id="delimiter-lotes-select" class="w-full p-2 border rounded-lg bg-gray-50 text-sm mb-4"><option value=";">Ponto e Vírgula (;)</option><option value=",">Vírgula (,)</option><option value="\t">Tabulação (TSV)</option></select>
             <button id="import-lotes-button" onclick="window.handleBulkLotesImport()" class="w-full bg-orange-600 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition">Atualizar Inventário</button>
         </div>
     </div>
@@ -213,15 +220,33 @@
         
         let db, auth, allMedications = [], html5QrCode = null, currentFilteredList = [];
 
+        // Mapeamento de meses para normalização
+        const MONTH_MAP = { jan: '01', fev: '02', mar: '03', abr: '04', mai: '05', jun: '06', jul: '07', ago: '08', set: '09', out: '10', nov: '11', dez: '12' };
+
+        function normalizeDate(raw) {
+            if (!raw) return null;
+            const normalized = raw.toLowerCase().trim();
+            if (/^\d{4}-\d{2}$/.test(normalized)) return normalized; // Já está no formato YYYY-MM
+            
+            // Tenta detectar "dez-25" ou "12/2025"
+            const parts = normalized.match(/([a-z0-9]+)[-\s/]?(\d{2,4})/);
+            if (parts) {
+                let m = MONTH_MAP[parts[1]] || parts[1];
+                let y = parts[2];
+                if (y.length === 2) y = (parseInt(y) < 70 ? '20' : '19') + y;
+                if (m.length === 1) m = '0' + m;
+                if (parseInt(m) > 0 && parseInt(m) <= 12) return `${y}-${m}`;
+            }
+            return null;
+        }
+
         async function bootstrap() {
             try {
                 const app = initializeApp(APP_CONFIG);
                 auth = getAuth(app);
                 db = getFirestore(app);
-
                 if (initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
                 else await signInAnonymously(auth);
-
                 onAuthStateChanged(auth, u => { 
                     if(u) { 
                         document.getElementById('db-status').textContent = "✅ Base Conectada";
@@ -235,7 +260,6 @@
         function startSync() {
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), snap => {
                 allMedications = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                // Força a renderização imediata, mesmo se o filtro estiver vazio
                 window.applyFilters();
             });
         }
@@ -317,7 +341,6 @@
         // --- SCANNER OTIMIZADO ---
         window.openScannerModal = function(mode) {
             window.scannerMode = mode;
-            // Corrigido: Não limpa a busca ao abrir para não sumir a tabela antes da leitura
             document.getElementById('scanner-modal').classList.remove('hidden');
             html5QrCode = new Html5Qrcode("reader");
             const config = { 
@@ -342,9 +365,7 @@
 
         window.closeScannerModal = function() {
             document.getElementById('scanner-modal').classList.add('hidden');
-            if (html5QrCode) {
-                html5QrCode.stop().then(() => { html5QrCode = null; }).catch(() => {});
-            }
+            if (html5QrCode) html5QrCode.stop().then(() => { html5QrCode = null; }).catch(() => {});
         };
 
         window.quickLookup = (query) => {
@@ -357,7 +378,7 @@
                 document.getElementById('laboratory').value = found.laboratory;
                 document.getElementById('form-title').textContent = "Adicionar Novo Lote";
                 document.getElementById('barcode').disabled = true;
-            } else { window.showMessage("Não localizado.", "error"); }
+            } else { window.showMessage("Produto não localizado.", "error"); }
         };
 
         window.loadForEdit = (id) => {
@@ -394,25 +415,12 @@
             const reader = new FileReader();
             reader.onload = async (e) => {
                 const lines = e.target.result.split('\n').filter(l => l.trim() !== '');
-                const monthMap = { jan: '01', fev: '02', mar: '03', abr: '04', mai: '05', jun: '06', jul: '07', ago: '08', set: '09', out: '10', nov: '11', dez: '12' };
-                const normalizeDate = (raw) => {
-                    const normalized = raw.toLowerCase().trim();
-                    if (/^\d{4}-\d{2}$/.test(normalized)) return normalized;
-                    const parts = normalized.match(/([a-z]+)[-\s/]?(\d{2,4})/);
-                    if (parts) {
-                        const m = monthMap[parts[1]] || parts[1];
-                        let y = parts[2];
-                        if (y.length === 2) y = (parseInt(y) < 70 ? '20' : '19') + y;
-                        return `${y}-${m.padStart(2, '0')}`;
-                    }
-                    return null;
-                };
                 for(let line of lines) {
                     const v = line.split(delimiter).map(x => x.trim());
                     if(v.length >= 6) {
                         const data = {
                             barcode: v[0].replace(/[^0-9]/g, ''), internalCode: v[1], description: v[2], laboratory: v[3],
-                            expirationDate: normalizeDate(v[4]), quantity: parseInt(v[5]),
+                            expirationDate: normalizeDate(v[4]), quantity: parseInt(v[5]) || 0,
                             searchTerms: (v[0]+v[1]+v[2]).toLowerCase()
                         };
                         await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), data);
@@ -435,11 +443,30 @@
                 for(let line of lines) {
                     const v = line.split(delimiter).map(x => x.trim());
                     if(v.length >= 5) {
-                        const data = { barcode: v[0], internalCode: v[1], description: v[2], laboratory: v[3], quantity: parseInt(v[4]), expirationDate: null, searchTerms: (v[0]+v[1]+v[2]).toLowerCase() };
+                        let validade = null;
+                        let quantidade = 0;
+                        
+                        // Detecta se a planilha tem 6 colunas (com validade) ou 5 colunas (sem validade)
+                        if (v.length >= 6) {
+                            validade = normalizeDate(v[4]);
+                            quantidade = parseInt(v[5]) || 0;
+                        } else {
+                            quantidade = parseInt(v[4]) || 0;
+                        }
+
+                        const data = { 
+                            barcode: v[0], 
+                            internalCode: v[1], 
+                            description: v[2], 
+                            laboratory: v[3], 
+                            quantity: quantidade, 
+                            expirationDate: validade, 
+                            searchTerms: (v[0]+v[1]+v[2]).toLowerCase() 
+                        };
                         await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), data);
                     }
                 }
-                window.showMessage("Importação inicial concluída!");
+                window.showMessage("Concluído!");
                 window.closeImportModal();
             };
             reader.readAsText(file);
@@ -465,7 +492,7 @@
                 internalCode: document.getElementById('internalCode').value,
                 description: document.getElementById('description').value,
                 laboratory: document.getElementById('laboratory').value,
-                quantity: parseInt(document.getElementById('quantity').value),
+                quantity: parseInt(document.getElementById('quantity').value) || 0,
                 expirationDate: document.getElementById('expirationDate').value,
                 searchTerms: (document.getElementById('barcode').value + (document.getElementById('internalCode').value || '') + document.getElementById('description').value).toLowerCase()
             };
