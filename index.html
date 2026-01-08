@@ -18,7 +18,7 @@
         #reader { width: 100% !important; border: none !important; border-radius: 0.5rem; overflow: hidden; background: #000; }
         #reader__dashboard { display: none !important; }
         
-        /* Estilos específicos da Tabela (Fiel à Foto 1) */
+        /* Estilos da Tabela - Fiel à Foto 1 e Validado */
         .table-header-text { font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #f3f4f6; }
         .desc-text { color: #78350f; font-weight: 600; text-transform: uppercase; line-height: 1.2; font-size: 14px; }
         .barcode-text { color: #9ca3af; font-size: 13px; font-family: sans-serif; }
@@ -33,7 +33,7 @@
     <div id="app" class="container">
         <header class="py-6 mb-8 bg-white shadow-md rounded-lg no-print">
             <h1 class="text-3xl font-bold text-center text-red-700">Souza Farma - Controle de Validade</h1>
-            <p id="db-status" class="text-center text-gray-400 text-[10px] mt-1 font-black uppercase tracking-widest">Sincronizando Banco de Dados...</p>
+            <p id="db-status" class="text-center text-gray-400 text-[10px] mt-1 font-black uppercase tracking-widest">Sincronizando Sistema...</p>
         </header>
 
         <div id="message-container" class="fixed top-4 right-4 space-y-2 no-print"></div>
@@ -46,12 +46,15 @@
                          alt="Souza Farma" class="logo-img"
                          onerror="this.onerror=null; this.src='https://placehold.co/200x80/cc0000/ffffff?text=Souza+Farma';">
                     
-                    <div class="flex flex-col space-y-4">
+                    <div class="flex flex-col space-y-3">
                         <button onclick="window.openCadastroModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition active:scale-95">
                             + Cadastrar Novo Produto
                         </button>
                         <button onclick="window.openImportModal()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition active:scale-95">
-                            Importar Produtos em Massa
+                            Importar Produtos (Inicial)
+                        </button>
+                        <button onclick="window.openImportLotesModal()" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition active:scale-95">
+                            Atualizar Lotes (Excel)
                         </button>
                         <button onclick="window.confirmDeleteAll()" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition active:scale-95 text-xs">
                             ❌ Excluir TODO o Inventário
@@ -75,21 +78,21 @@
             <div class="lg:w-3/4">
                 <div class="bg-white p-6 rounded-xl shadow-xl border border-gray-200">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
-                        <h2 class="text-2xl font-bold text-blue-800">Itens com Baixa Validade</h2>
+                        <h2 class="text-2xl font-semibold text-blue-700 font-bold">Itens com Baixa Validade</h2>
                         <div class="flex space-x-2 no-print">
-                            <button onclick="window.exportToCsv()" class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold text-sm shadow hover:bg-green-700 transition">Excel</button>
-                            <button onclick="window.printFilteredList()" class="bg-gray-700 text-white px-4 py-2 rounded-lg font-bold text-sm shadow hover:bg-gray-800 transition">PDF</button>
+                            <button onclick="window.exportToCsv()" class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold text-sm shadow">Exportar Excel</button>
+                            <button onclick="window.printFilteredList()" class="bg-gray-700 text-white px-4 py-2 rounded-lg font-bold text-sm shadow">PDF</button>
                         </div>
                     </div>
 
-                    <div class="mb-6 no-print space-y-4">
+                    <div class="mb-4 no-print space-y-4">
                         <div class="flex space-x-2">
                             <input type="text" id="search-input" class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-green-500 text-sm bg-gray-50 shadow-inner"
                                 placeholder="Filtrar por barras, nome ou interno..." onkeyup="window.applyFilters()">
-                            <button onclick="window.openScannerModal('BUSCA')" class="bg-green-500 text-white p-3 rounded-lg shadow hover:bg-green-600 active:scale-90 transition" title="Escanear Filtro">
+                            <button onclick="window.openScannerModal('BUSCA')" class="bg-green-500 text-white p-3 rounded-lg shadow active:scale-90" title="Escanear Filtro">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                             </button>
-                            <button onclick="window.clearSearch()" class="bg-gray-200 text-gray-700 px-4 rounded-lg font-black text-[10px] uppercase hover:bg-gray-300 transition">Limpar</button>
+                            <button onclick="window.clearSearch()" class="bg-gray-200 text-gray-700 px-4 rounded-lg font-black text-[10px] uppercase">Limpar</button>
                         </div>
 
                         <!-- Legenda de Cores -->
@@ -115,7 +118,7 @@
                                 </tr>
                             </thead>
                             <tbody id="medication-list" class="bg-white divide-y divide-gray-200 text-sm">
-                                <tr><td colspan="7" class="p-16 text-center text-gray-400 italic font-medium animate-pulse">Estabelecendo ligação segura com a base de dados...</td></tr>
+                                <tr><td colspan="7" class="p-16 text-center text-gray-400 italic font-medium animate-pulse">Estabelecendo ligação segura com a base...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -141,8 +144,33 @@
                     <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Quantidade</label><input type="number" id="quantity" required class="w-full p-3 bg-gray-50 border rounded-xl text-sm border-none shadow-inner focus:ring-2 focus:ring-blue-500"></div>
                     <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Validade</label><input type="month" id="expirationDate" class="w-full p-3 bg-gray-50 border rounded-xl text-sm border-none shadow-inner focus:ring-2 focus:ring-blue-500"></div>
                 </div>
-                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition mt-2">Salvar Registro</button>
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition mt-2">Gravar Registro</button>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal Importação Inicial -->
+    <div id="import-modal" class="modal-overlay hidden no-print">
+        <div class="modal-content shadow-2xl">
+            <button class="absolute top-4 right-4 text-gray-400 text-2xl" onclick="window.closeImportModal()">&times;</button>
+            <h2 class="text-xl font-bold mb-4 text-purple-700 uppercase tracking-tight">Importação Inicial</h2>
+            <input type="file" id="bulk-file-input" accept=".csv, .tsv" class="w-full p-3 border rounded-xl bg-gray-50 mb-4 text-sm">
+            <label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Separador:</label>
+            <select id="delimiter-select" class="w-full p-3 border-none bg-gray-50 rounded-xl mb-6 text-sm shadow-inner"><option value=";">Ponto e Vírgula (;)</option><option value=",">Vírgula (,)</option><option value="\t">Tabulação (TSV)</option></select>
+            <button onclick="window.handleBulkImport()" class="w-full bg-purple-600 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition">Importar Planilha</button>
+        </div>
+    </div>
+
+    <!-- NOVO/RESTAURADO: Modal Atualizar Lotes (Excel) -->
+    <div id="import-lotes-modal" class="modal-overlay hidden no-print">
+        <div class="modal-content shadow-2xl">
+            <button class="absolute top-4 right-4 text-gray-400 text-2xl" onclick="window.closeImportLotesModal()">&times;</button>
+            <h2 class="text-xl font-bold mb-4 text-orange-700 uppercase tracking-tight">Atualizar Lotes (Excel)</h2>
+            <p class="text-[10px] text-gray-500 mb-4">Colunas: Barras, Interno, Descrição, Lab, Validade, Qtd.</p>
+            <input type="file" id="bulk-lotes-file-input" accept=".csv, .tsv" class="w-full p-3 border rounded-xl bg-gray-50 mb-4 text-sm">
+            <label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Separador:</label>
+            <select id="delimiter-lotes-select" class="w-full p-3 border-none bg-gray-50 rounded-xl mb-6 text-sm shadow-inner"><option value=";">Ponto e Vírgula (;)</option><option value=",">Vírgula (,)</option><option value="\t">Tabulação (TSV)</option></select>
+            <button id="import-lotes-button" onclick="window.handleBulkLotesImport()" class="w-full bg-orange-600 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition">Atualizar Inventário</button>
         </div>
     </div>
 
@@ -154,7 +182,7 @@
             </div>
             <div id="reader"></div>
             <div class="p-6 bg-gray-50 text-center border-t border-gray-100">
-                <p class="text-blue-800 text-sm font-bold uppercase tracking-widest italic">iPhone 7 / 12 (Alta Precisão)</p>
+                <p class="text-blue-800 text-sm font-bold uppercase tracking-widest italic">Alta Precisão (iPhone 7 / 12)</p>
             </div>
         </div>
     </div>
@@ -170,7 +198,7 @@
         
         let db, auth, allMedications = [], html5QrCode = null, currentFilteredList = [];
 
-        async function bootstrap() {
+        async function init() {
             try {
                 const app = initializeApp(APP_CONFIG);
                 auth = getAuth(app);
@@ -201,7 +229,7 @@
             });
         }
 
-        // --- FUNÇÕES GLOBAIS ---
+        // --- EXPOSIÇÃO GLOBAL DE FUNÇÕES ---
         window.openCadastroModal = () => document.getElementById('medication-modal').classList.remove('hidden');
         window.closeModal = () => {
             document.getElementById('medication-modal').classList.add('hidden');
@@ -212,9 +240,12 @@
         };
         window.openImportModal = () => document.getElementById('import-modal').classList.remove('hidden');
         window.closeImportModal = () => document.getElementById('import-modal').classList.add('hidden');
+        window.openImportLotesModal = () => document.getElementById('import-lotes-modal').classList.remove('hidden');
+        window.closeImportLotesModal = () => document.getElementById('import-lotes-modal').classList.add('hidden');
 
         window.applyFilters = () => {
-            const term = (document.getElementById('search-input').value || "").toLowerCase().trim();
+            const searchInputEl = document.getElementById('search-input');
+            const term = (searchInputEl ? searchInputEl.value : "").toLowerCase().trim();
             let filtered = allMedications;
             if (term) filtered = filtered.filter(m => (m.barcode + (m.internalCode||'') + m.description).toLowerCase().includes(term));
             filtered.sort((a, b) => (a.expirationDate || '9999-12').localeCompare(b.expirationDate || '9999-12'));
@@ -265,7 +296,7 @@
             return (y1 - y2) * 12 + (month1 - month2);
         }
 
-        // --- SCANNER ---
+        // --- SCANNER OTIMIZADO ---
         window.openScannerModal = function(mode) {
             window.scannerMode = mode;
             if(mode === 'BUSCA') window.clearSearch();
@@ -278,7 +309,8 @@
                     if (width > 420) width = 420; if (height < 120) height = 120;
                     return { width: width, height: height };
                 },
-                supportedScanTypes: [Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.EAN_13],
+                aspectRatio: 1.0,
+                supportedScanTypes: [Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.CODE_39],
                 videoConstraints: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
             };
             html5QrCode.start({ facingMode: "environment" }, config, (text) => {
@@ -286,6 +318,7 @@
                 if(window.scannerMode === 'BUSCA') {
                     document.getElementById('search-input').value = text;
                     window.applyFilters();
+                    window.showMessage("Filtro aplicado.");
                 } else { window.quickLookup(text); }
             }, () => {});
         };
@@ -303,7 +336,7 @@
                 document.getElementById('internalCode').value = found.internalCode;
                 document.getElementById('description').value = found.description;
                 document.getElementById('laboratory').value = found.laboratory;
-                document.getElementById('form-title').textContent = "Novo Lote";
+                document.getElementById('form-title').textContent = "Adicionar Lote";
                 document.getElementById('barcode').disabled = true;
             } else { window.showMessage("Não localizado.", "error"); }
         };
@@ -334,6 +367,58 @@
             }
         };
 
+        // --- LÓGICA DE IMPORTAÇÃO (Excel/Lotes) ---
+        window.handleBulkLotesImport = async function() {
+            const fileInput = document.getElementById('bulk-lotes-file-input');
+            const file = fileInput.files[0];
+            const delimiter = document.getElementById('delimiter-lotes-select').value;
+            if(!file) return window.showMessage("Selecione o ficheiro.", "error");
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const lines = e.target.result.split('\n').filter(l => l.trim() !== '');
+                let count = 0;
+                for(let line of lines) {
+                    const v = line.split(delimiter).map(x => x.trim());
+                    if(v.length >= 6) {
+                        const data = {
+                            barcode: v[0], internalCode: v[1], description: v[2], laboratory: v[3],
+                            expirationDate: v[4], // Espera formato YYYY-MM ou lógica similar
+                            quantity: parseInt(v[5]),
+                            searchTerms: (v[0]+v[1]+v[2]).toLowerCase()
+                        };
+                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), data);
+                        count++;
+                    }
+                }
+                window.showMessage(`${count} lotes importados!`);
+                window.closeImportLotesModal();
+            };
+            reader.readAsText(file);
+        };
+
+        window.handleBulkImport = async function() {
+            const fileInput = document.getElementById('bulk-file-input');
+            const file = fileInput.files[0];
+            const delimiter = document.getElementById('delimiter-select').value;
+            if(!file) return window.showMessage("Selecione o ficheiro.", "error");
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const lines = e.target.result.split('\n').filter(l => l.trim() !== '');
+                for(let line of lines) {
+                    const v = line.split(delimiter).map(x => x.trim());
+                    if(v.length >= 5) {
+                        const data = { barcode: v[0], internalCode: v[1], description: v[2], laboratory: v[3], quantity: parseInt(v[4]), expirationDate: null, searchTerms: (v[0]+v[1]+v[2]).toLowerCase() };
+                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), data);
+                    }
+                }
+                window.showMessage("Importação inicial concluída!");
+                window.closeImportModal();
+            };
+            reader.readAsText(file);
+        };
+
         window.exportToCsv = () => {
             let c = "Cód. Barras;Cód. Interno;Descrição;Laboratório;Validade;Qtd\n";
             currentFilteredList.forEach(m => c += `${m.barcode};${m.internalCode};${m.description};${m.laboratory};${m.expirationDate};${m.quantity}\n`);
@@ -361,7 +446,7 @@
             if(id) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id), data);
             else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), data);
             window.closeModal();
-            window.showMessage("Salvo!");
+            window.showMessage("Salvo com sucesso!");
         };
 
         window.showMessage = (text, type = 'success') => {
@@ -373,7 +458,7 @@
             setTimeout(() => el.remove(), 4000);
         };
 
-        bootstrap();
+        init();
     </script>
 </body>
 </html>
