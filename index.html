@@ -179,13 +179,13 @@
             </form>
         </div>
     </div>
-    
+
     <div id="import-modal" class="modal-overlay hidden no-print">
         <div class="modal-content">
             <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="closeImportModal()"> &times; </button>
             <h2 class="text-2xl font-semibold mb-6 text-purple-700">Importação Inicial de Produtos</h2>
             <p class="text-sm text-gray-600 mb-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                **Instruções:** Exporte sua planilha do Excel para o formato **CSV (Ponto e Vírgula)** e selecione o arquivo abaixo. A ordem das colunas DEVE ser: **CÓDIGO DE BARRAS, CÓDIGO INTERNO, DESCRIÇÃO, LABORATÓRIO, QUANTIDADE.** A validade será preenchida manualmente após a importação.
+                **Instruções:** Exporte sua planilha do Excel para o formato **CSV (Ponto e Vírgula)** e selecione o arquivo abaixo. A ordem das colunas pode ser de 5 ou 6: **BARRAS, INTERNO, DESCRIÇÃO, LABORATÓRIO, VALIDADE, QUANTIDADE.**
             </p>
             <div class="mb-4"> <label for="bulk-file-input" class="block text-sm font-medium text-gray-700 mb-1"> Arquivo CSV/TSV: </label> <input type="file" id="bulk-file-input" accept=".csv, .tsv" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 transition duration-150 bg-white"> </div>
             <div class="mb-6">
@@ -200,7 +200,7 @@
             <button type="button" id="cancel-edit-button" class="w-full mt-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out" onclick="closeImportModal()"> Cancelar </button>
         </div>
     </div>
-    
+
     <div id="import-lotes-modal" class="modal-overlay hidden no-print">
         <div class="modal-content">
             <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="closeImportLotesModal()"> &times; </button>
@@ -221,7 +221,7 @@
             <button type="button" class="w-full mt-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out" onclick="closeImportLotesModal()"> Cancelar </button>
         </div>
     </div>
-    
+
     <div id="scanner-modal" class="modal-overlay hidden no-print">
         <div class="modal-content" style="max-width: 600px; width: 600px;">
             <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="closeScannerModal()"> &times; </button>
@@ -238,9 +238,6 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, addDoc, setDoc, onSnapshot, collection, query, where, deleteDoc, getDoc, updateDoc, Timestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; 
 
-        // ***************************************************************
-        // ** CONFIGURAÇÃO FIREBASE DO PROJETO 'controle-de-validade-e708a' **
-        // ***************************************************************
         const APP_CONFIG = {
             apiKey: "AIzaSyDc9-jix-tXCV8JHzivDR8pY1iCNNJeDPg",
             authDomain: "controle-de-validade-e708a.firebaseapp.com",
@@ -250,67 +247,47 @@
             appId: "1:300173058270:web:970549624a4c46af3d624f"
         };
         const EXTERNAL_APP_ID = "controle-de-validade-e708a";
-        // ***************************************************************
         
         const appId = typeof __app_id !== 'undefined' ? __app_id : EXTERNAL_APP_ID;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         
-        let firebaseConfig = null;
-        let isFirebaseReady = false; 
-
-        try {
-            if (typeof __firebase_config !== 'undefined' && JSON.parse(__firebase_config).apiKey) {
-                 firebaseConfig = JSON.parse(__firebase_config); 
-            } else {
-                 firebaseConfig = APP_CONFIG; 
-            }
-        } catch (e) {
-            firebaseConfig = APP_CONFIG; 
-        }
-
+        let firebaseConfig = APP_CONFIG;
         let app, db, auth, userId = null;
         let allMedications = []; 
         let currentFilteredList = []; 
         const COLLECTION_NAME = 'medicamentos';
         let html5QrCode = null;
+        let isFirebaseReady = false;
 
-        // --- DADOS FICTÍCIOS DE TESTE ---
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const nextMonth = String((today.getMonth() + 2) % 12 || 12).padStart(2, '0');
-        const nextYear = today.getMonth() === 11 ? yyyy + 1 : yyyy;
-        
-        const dummyData = [
-            { id: 'dummy1', barcode: '123456789', internalCode: 'PAIN01', description: 'Dipirona 500mg (Vermelho)', laboratory: 'ABC Pharma', quantity: 5, expirationDate: `${yyyy}-${mm}`, searchTerms: 'dipirona pain01 abc' },
-            { id: 'dummy2', barcode: '987654321', internalCode: 'VITC', description: 'Vitamina C 1g (Amarelo Forte)', laboratory: 'Beta Labs', quantity: 20, expirationDate: `${nextYear}-${nextMonth}`, searchTerms: 'vitamina vitc beta' },
-            { id: 'dummy3', barcode: '111222333', internalCode: 'ANTIB', description: 'Amoxicilina 500mg (Verde)', laboratory: 'Gamma Genéricos', quantity: 50, expirationDate: '2026-06', searchTerms: 'amoxicilina antib gamma' },
-            { id: 'dummy4', barcode: '444555666', internalCode: 'PEND', description: 'Soro Fisiológico (PENDENTE)', laboratory: 'Delta Suprimentos', quantity: 100, expirationDate: null, searchTerms: 'soro pend delta' },
-        ];
-        // ---------------------------------------------------------------------
+        const MONTH_MAP = { jan: '01', fev: '02', mar: '03', abr: '04', mai: '05', jun: '06', jul: '07', ago: '08', set: '09', out: '10', nov: '11', dez: '12' };
 
-        // Elementos do DOM
-        const form = document.getElementById('medication-form');
-        const importModal = document.getElementById('import-modal'); 
-        const bulkFileInput = document.getElementById('bulk-file-input'); 
-        const delimiterSelect = document.getElementById('delimiter-select');
-        const importLotesModal = document.getElementById('import-lotes-modal');
-        const bulkLotesFileInput = document.getElementById('bulk-lotes-file-input');
-        const delimiterLotesSelect = document.getElementById('delimiter-lotes-select');
-        const scannerModal = document.getElementById('scanner-modal');
-        const listContainer = document.getElementById('medication-list');
-        const searchInput = document.getElementById('search-input');
-        const expirationFilterInput = document.getElementById('expiration-filter');
-        const quickSearchInput = document.getElementById('quick-search-input');
-        const formTitle = document.getElementById('form-title');
-        const submitButton = document.getElementById('submit-button');
-        const cancelButton = document.getElementById('cancel-edit-button');
-
-        
         // --- FUNÇÕES DE UTILIDADE ---
 
+        function getStandardExpirationDate(dateStr) {
+            if (!dateStr) return null;
+            const normalized = dateStr.toLowerCase().trim();
+            if (/^\d{4}-\d{2}$/.test(normalized)) return normalized;
+            const partsMonthYear = normalized.match(/([a-z]+)[-\s/]?(\d{2,4})/); 
+            if (partsMonthYear) {
+                const month = partsMonthYear[1];
+                let year = partsMonthYear[2];
+                let monthNumber = MONTH_MAP[month] || month;
+                if (year.length === 2) year = (parseInt(year) < 70 ? '20' : '19') + year;
+                if (monthNumber.length === 1) monthNumber = '0' + monthNumber;
+                return `${year}-${monthNumber}`;
+            }
+            const partsNum = normalized.match(/(\d{1,2})[/\s]?(\d{2,4})/);
+            if (partsNum) {
+                let monthNumber = partsNum[1].padStart(2, '0');
+                let year = partsNum[2];
+                if (year.length === 2) year = (parseInt(year) < 70 ? '20' : '19') + year;
+                return `${year}-${monthNumber}`;
+            }
+            return null;
+        }
+
         function getCollectionRef() {
-            if (!db || !userId) throw new Error("Firebase não inicializado ou usuário não autenticado.");
+            if (!db || !userId) throw new Error("Firebase não inicializado.");
             return collection(db, 'artifacts', appId, 'public', 'data', COLLECTION_NAME); 
         }
         
@@ -327,781 +304,253 @@
         function monthDiff(date1Str, date2Str) {
             const parts1 = date1Str.split('-').map(Number);
             const parts2 = date2Str.split('-').map(Number);
-            const year1 = parts1[0];
-            const month1 = parts1[1];
-            const year2 = parts2[0];
-            const month2 = parts2[1];
-            return (year1 - year2) * 12 + (month1 - month2);
+            return (parts1[0] - parts2[0]) * 12 + (parts1[1] - parts2[1]);
         }
 
         function showMessage(text, type = 'success') {
             const container = document.getElementById('message-container');
             const element = document.createElement('div');
-            
             let bgColor, icon;
             if (type === 'success') { bgColor = 'bg-green-100 border-green-400 text-green-700'; icon = '✅'; } 
             else if (type === 'error') { bgColor = 'bg-red-100 border-red-400 text-red-700'; icon = '❌'; } 
             else { bgColor = 'bg-blue-100 border-blue-400 text-blue-700'; icon = 'ℹ️'; }
-
             element.className = `message-box ${bgColor} border-l-4`;
             element.innerHTML = `<div class="flex items-center"><span class="mr-2">${icon}</span><span>${text}</span><button class="ml-4 text-gray-500 hover:text-gray-700" onclick="this.parentNode.parentNode.remove()">&times;</button></div>`;
             container.appendChild(element);
             setTimeout(() => { element.style.opacity = '0'; setTimeout(() => element.remove(), 300); }, 5000);
         }
-        window.showMessage = showMessage; 
 
-        function showConfirmationModal(message, onConfirm) {
-            const existingModal = document.getElementById('confirmation-modal');
-            if (existingModal) existingModal.remove();
+        // Elementos do DOM
+        const form = document.getElementById('medication-form');
+        const listContainer = document.getElementById('medication-list');
+        const searchInput = document.getElementById('search-input');
+        const expirationFilterInput = document.getElementById('expiration-filter');
+        const quickSearchInput = document.getElementById('quick-search-input');
+        const formTitle = document.getElementById('form-title');
+        const submitButton = document.getElementById('submit-button');
+        const cancelButton = document.getElementById('cancel-edit-button');
 
-            const modalHtml = `
-                <div id="confirmation-modal" class="modal-overlay">
-                    <div class="modal-content" style="max-width: 350px;">
-                        <p class="text-lg font-semibold mb-6">${message}</p>
-                        <div class="flex justify-end space-x-4">
-                            <button id="confirm-btn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition">Confirmar</button>
-                            <button id="cancel-btn" class="bg-gray-400 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg transition">Cancelar</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            
-            const modalElement = document.getElementById('confirmation-modal');
-            
-            document.getElementById('confirm-btn').onclick = () => {
-                onConfirm();
-                modalElement.remove();
-            };
-            
-            document.getElementById('cancel-btn').onclick = () => {
-                modalElement.remove();
-            };
-        }
-        
-        // --- FUNÇÕES DE MODAL ---
-
-        window.openCadastroModal = function() {
-            const modalElement = document.getElementById('medication-modal');
-            if (modalElement) {
-                resetForm();
-                modalElement.classList.remove('hidden');
-            }
-        };
-
-        window.closeModal = function() {
-            const modalElement = document.getElementById('medication-modal');
-            if (modalElement) {
-                modalElement.classList.add('hidden');
-            }
-            resetForm(); 
-        }
-
-        window.openImportModal = function() {
-            const importModalElement = document.getElementById('import-modal');
-            if (importModalElement) {
-                closeImportModal(); 
-                importModalElement.classList.remove('hidden');
-            }
-        };
-
-        window.closeImportModal = function() {
-            const importModalElement = document.getElementById('import-modal');
-            if (importModalElement) {
-                importModalElement.classList.add('hidden');
-            }
-            if (bulkFileInput) {
-                bulkFileInput.value = ''; 
-            }
-        }
-        
-        window.openImportLotesModal = function() {
-            const importLotesModalElement = document.getElementById('import-lotes-modal');
-            if (importLotesModalElement) {
-                closeImportLotesModal(); 
-                importLotesModalElement.classList.remove('hidden');
-            }
-        };
-
-        window.closeImportLotesModal = function() {
-            const importLotesModalElement = document.getElementById('import-lotes-modal');
-            if (importLotesModalElement) {
-                importLotesModalElement.classList.add('hidden');
-            }
-            if (bulkLotesFileInput) {
-                bulkLotesFileInput.value = ''; 
-            }
-        }
-
+        window.closeModal = function() { document.getElementById('medication-modal').classList.add('hidden'); resetForm(); }
+        window.closeImportModal = function() { document.getElementById('import-modal').classList.add('hidden'); }
+        window.closeImportLotesModal = function() { document.getElementById('import-lotes-modal').classList.add('hidden'); }
         window.resetForm = function() {
             form.reset();
             document.getElementById('doc-id').value = '';
             formTitle.textContent = 'Cadastrar Novo Produto';
             submitButton.textContent = 'Cadastrar Medicamento';
-            submitButton.classList.remove('bg-green-600', 'hover:bg-green-700');
-            submitButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
             cancelButton.classList.add('hidden');
-            if (quickSearchInput) quickSearchInput.value = '';
-            document.getElementById('expirationDate').value = ''; 
-            
             document.getElementById('barcode').disabled = false;
             document.getElementById('internalCode').disabled = false;
             document.getElementById('description').disabled = false;
             document.getElementById('laboratory').disabled = false;
         }
 
-        // --- FUNÇÕES FIREBASE E CRUD ---
-
-        async function initializeFirebase() {
-            if (firebaseConfig.apiKey === "dummy-key") {
-                isFirebaseReady = false;
-                setupDummyData(); 
-                showMessage("ERRO DE CONFIGURAÇÃO: Persistência de dados DESABILITADA. Carregando DADOS FICTÍCIOS.", "error");
-                return;
-            }
-            
+        async function bootstrap() {
             try {
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
+                if (initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
+                else await signInAnonymously(auth);
                 isFirebaseReady = true;
-                
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         userId = user.uid;
-                        setupRealtimeListener();
-                    } else {
-                        console.error("Autenticação falhou.");
-                        showMessage("Sessão de usuário perdida. Recarregue a página.", "error");
+                        onSnapshot(getCollectionRef(), (snapshot) => {
+                            allMedications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            sortAndRender();
+                        });
                     }
                 });
-
-            } catch (error) {
-                console.error("Erro ao inicializar ou autenticar Firebase:", error);
-                
-                let errorMsg = "Erro ao iniciar a conexão segura. ";
-                if (error.code === 'auth/invalid-api-key' || error.code === 'auth/configuration-not-found') {
-                    errorMsg = "ERRO DE CONFIGURAÇÃO: A chave API do Firebase está incorreta.";
-                } else {
-                    errorMsg += error.message;
-                }
-
-                showMessage(errorMsg, "error");
-                isFirebaseReady = false;
-                setupDummyData(); 
-            }
-        }
-        
-        function setupDummyData() {
-            allMedications = dummyData;
-            sortAndRender();
+            } catch (e) { showMessage("Erro ao conectar.", "error"); }
         }
 
-        function setupRealtimeListener() {
-            if (!isFirebaseReady) return;
-
-            try {
-                const medsRef = getCollectionRef();
-                const q = query(medsRef); 
-
-                onSnapshot(q, (snapshot) => {
-                    const medications = [];
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        medications.push({ id: doc.id, ...data });
-                    });
-
-                    allMedications = medications;
-                    sortAndRender(); 
-                }, (error) => {
-                    console.error("Erro ao ouvir coleção:", error);
-                    showMessage("Erro ao carregar dados em tempo real: " + error.message, "error");
-                });
-            } catch (error) {
-                console.error("Erro ao configurar listener:", error);
-                showMessage("Erro na configuração de dados: " + error.message, "error");
-            }
-        }
-        
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            if (!isFirebaseReady) {
-                showMessage("Aviso: Persistência de dados não está ativa. Não é possível salvar.", "error");
-                return;
-            }
-            
+            if (!isFirebaseReady) return;
             const docId = document.getElementById('doc-id').value;
             const barcode = document.getElementById('barcode').value.trim();
             const internalCode = document.getElementById('internalCode').value.trim();
             const description = document.getElementById('description').value.trim();
             const laboratory = document.getElementById('laboratory').value.trim();
             const quantity = parseInt(document.getElementById('quantity').value, 10);
-            const expirationDate = document.getElementById('expirationDate').value; 
-
-            if (isNaN(quantity) || quantity < 0) {
-                showMessage("Quantidade deve ser um número válido e positivo.", "error");
-                return;
-            }
-
+            const expirationDate = document.getElementById('expirationDate').value;
             const data = { barcode, internalCode, description, laboratory, quantity, expirationDate: expirationDate || null, searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase() };
-
             try {
-                if (docId) {
-                    await updateDoc(doc(getCollectionRef(), docId), data);
-                    showMessage("Medicamento atualizado com sucesso!", "success");
-                } else {
-                    await addDoc(getCollectionRef(), data);
-                    showMessage("Medicamento cadastrado com sucesso!", "success");
-                }
+                if (docId) await updateDoc(doc(getCollectionRef(), docId), data);
+                else await addDoc(getCollectionRef(), data);
                 closeModal();
-            } catch (error) {
-                console.error("Erro ao salvar medicamento:", error);
-                showMessage("Erro ao salvar medicamento: " + error.message, "error");
-            }
+                showMessage("Salvo com sucesso!");
+            } catch (e) { showMessage("Erro ao salvar.", "error"); }
         });
 
         window.deleteMedication = async function(id) {
-            if (!isFirebaseReady) {
-                showMessage("Aviso: Persistência de dados não está ativa. Não é possível excluir.", "error");
-                return;
-            }
-
-            showConfirmationModal("Tem certeza que deseja DELETAR este lote? Esta ação é irreversível.", async () => {
-                try {
-                    await deleteDoc(doc(getCollectionRef(), id));
-                    showMessage("Lote excluído com sucesso!", "success");
-                } catch (error) {
-                    console.error("Erro ao deletar lote:", error);
-                    showMessage("Erro ao deletar lote: " + error.message, "error");
-                }
-            });
-        }
-        
-        // NOVO: Função para confirmar a exclusão de TUDO
-        window.confirmDeleteAll = function() {
-            if (!isFirebaseReady) {
-                showMessage("Aviso: Persistência de dados não está ativa. Não é possível excluir.", "error");
-                return;
-            }
-
-            showConfirmationModal(
-                "⚠️ ATENÇÃO: Você está prestes a DELETAR TODOS os lotes do seu inventário. Tem certeza absoluta que deseja continuar?",
-                () => {
-                    // Confirmação 1 bem sucedida, pede a confirmação final
-                    showConfirmationModal(
-                        "🛑 ÚLTIMA CHANCE: Tem certeza? ESTA AÇÃO É IRREVERSÍVEL e apagará todos os dados. Clique em Confirmar para DELETAR TUDO.",
-                        () => {
-                            // Confirmação 2 bem sucedida
-                            deleteAllMedications();
-                        }
-                    );
-                }
-            );
-        }
-
-        // NOVO: Função que executa a exclusão de todos os documentos
-        async function deleteAllMedications() {
-            const medsRef = getCollectionRef();
-            let totalDeleted = 0;
-            const deletePromises = [];
-
-            try {
-                // Busca todos os documentos (lotes) na coleção
-                const snapshot = await getDocs(medsRef);
-                const total = snapshot.docs.length;
-
-                if (total === 0) {
-                    showMessage("O inventário já está vazio.", "info");
-                    return;
-                }
-
-                snapshot.docs.forEach(docToDelete => {
-                    deletePromises.push(deleteDoc(doc(medsRef, docToDelete.id))
-                        .then(() => { totalDeleted++; })
-                        .catch(error => { console.error("Erro ao deletar doc:", error); })
-                    );
-                });
-
-                // Espera todas as exclusões terminarem
-                await Promise.all(deletePromises);
-
-                showMessage(`✅ Exclusão em massa concluída! ${totalDeleted} lotes foram deletados.`, "success");
-
-            } catch (error) {
-                console.error("Erro fatal ao deletar o inventário:", error);
-                showMessage("Erro fatal ao deletar o inventário: " + error.message, "error");
+            if (confirm("Deletar este lote?")) {
+                try { await deleteDoc(doc(getCollectionRef(), id)); showMessage("Excluído!"); } catch (e) { showMessage("Erro.", "error"); }
             }
         }
-        
-        // FUNÇÃO DE IMPORTAÇÃO INICIAL (EXISTENTE)
+
+        window.confirmDeleteAll = async function() {
+            if (confirm("⚠️ APAGAR TUDO?")) {
+                if (confirm("🛑 ÚLTIMA CHANCE! CONFIRMAR?")) {
+                    const snap = await getDocs(getCollectionRef());
+                    const promises = snap.docs.map(d => deleteDoc(doc(getCollectionRef(), d.id)));
+                    await Promise.all(promises);
+                    showMessage("Inventário zerado.");
+                }
+            }
+        }
+
+        // --- FUNÇÃO DE IMPORTAÇÃO INICIAL (AJUSTADA) ---
         window.handleBulkImport = async function() {
-            if (!isFirebaseReady) {
-                showMessage("Aviso: Persistência de dados não está ativa. Não é possível importar.", "error");
-                return;
-            }
-            
-            const fileInput = bulkFileInput;
-            const file = fileInput.files[0];
-            if (!file) { showMessage("Selecione um arquivo CSV/TSV para importar.", "error"); return; }
-
-            const importButton = document.getElementById('import-button');
-            importButton.disabled = true;
-            importButton.textContent = 'Importando... Aguarde.';
-
-            const delimiter = delimiterSelect.value === '\t' ? '\t' : delimiterSelect.value;
-            
+            if (!isFirebaseReady) return;
+            const file = document.getElementById('bulk-file-input').files[0];
+            if (!file) return;
+            const delimiter = document.getElementById('delimiter-select').value;
             const reader = new FileReader();
-            reader.onload = async (event) => {
-                const rawData = event.target.result;
-                const lines = rawData.split('\n').filter(line => line.trim() !== '');
-
-                let successfulImports = 0;
-                let failedImports = 0;
-                const importPromises = [];
-
-                lines.forEach((line, index) => {
-                    const cleanLine = line.replace(/\r/g, ''); 
-                    const values = cleanLine.split(delimiter).map(v => v.trim());
-                    
-                    if (values.length >= 5) {
-                        const [barcode, internalCode, description, laboratory, quantityStr] = values;
-                        const quantity = parseInt(quantityStr, 10);
-
-                        if (barcode && internalCode && description && !isNaN(quantity) && quantity >= 0) {
-                            const data = { barcode, internalCode, description, laboratory: laboratory || 'N/A', quantity, expirationDate: null, searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase() };
-                            importPromises.push(addDoc(getCollectionRef(), data).then(() => { successfulImports++; }).catch(() => { failedImports++; }));
-                        } else { failedImports++; }
-                    } else { failedImports++; }
+            reader.onload = async (e) => {
+                const lines = e.target.result.split('\n').filter(l => l.trim() !== '');
+                const promises = lines.map(line => {
+                    const v = line.replace(/\r/g, '').split(delimiter).map(x => x.trim());
+                    if (v.length >= 5) {
+                        let barcode = v[0], internalCode = v[1], description = v[2], laboratory = v[3];
+                        let expirationDate = null, quantity = 0;
+                        if (v.length >= 6) {
+                            expirationDate = getStandardExpirationDate(v[4]);
+                            quantity = parseInt(v[5], 10) || 0;
+                        } else {
+                            quantity = parseInt(v[4], 10) || 0;
+                        }
+                        const data = { barcode, internalCode, description, laboratory, quantity, expirationDate, searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase() };
+                        return addDoc(getCollectionRef(), data);
+                    }
                 });
-
-                await Promise.all(importPromises);
-                showMessage(`Importação concluída. Sucessos: ${successfulImports}. Falhas: ${failedImports}.`, "success");
+                await Promise.all(promises);
+                showMessage("Importação concluída.");
                 closeImportModal();
-                importButton.disabled = false;
-                importButton.textContent = 'Importar Produtos';
             };
-            
-            reader.onerror = () => { showMessage("Erro ao ler o arquivo.", "error"); importButton.disabled = false; importButton.textContent = 'Importar Produtos'; };
             reader.readAsText(file);
         }
 
-        // MÉTODO: IMPORTAÇÃO DE LOTES COM VALIDADE (CONVERSÃO AUTOMÁTICA)
         window.handleBulkLotesImport = async function() {
-            if (!isFirebaseReady) {
-                showMessage("Aviso: Persistência de dados não está ativa. Não é possível importar.", "error");
-                return;
-            }
-
-            const fileInput = bulkLotesFileInput;
-            const file = fileInput.files[0];
-            if (!file) { showMessage("Selecione um arquivo CSV/TSV para importar.", "error"); return; }
-
-            const importButton = document.getElementById('import-lotes-button');
-            importButton.disabled = true;
-            importButton.textContent = 'Atualizando Lotes... Aguarde.';
-
-            const delimiter = delimiterLotesSelect.value === '\t' ? '\t' : delimiterLotesSelect.value;
-            
+            if (!isFirebaseReady) return;
+            const file = document.getElementById('bulk-lotes-file-input').files[0];
+            if (!file) return;
+            const delimiter = document.getElementById('delimiter-lotes-select').value;
             const reader = new FileReader();
-            reader.onload = async (event) => {
-                const rawData = event.target.result;
-                const lines = rawData.split('\n').filter(line => line.trim() !== '');
-
-                let successfulUpdates = 0;
-                let successfulAdds = 0;
-                let failedImports = 0;
-                const importPromises = [];
+            reader.onload = async (e) => {
+                const lines = e.target.result.split('\n').filter(l => l.trim() !== '');
+                const snap = await getDocs(getCollectionRef());
+                const existing = {};
+                snap.forEach(d => { const data = d.data(); if(data.internalCode && data.expirationDate) existing[`${data.internalCode}_${data.expirationDate}`] = d.id; });
                 
-                // Cache de lotes existentes para otimizar buscas e evitar duplicidade
-                const currentDocsSnapshot = await getDocs(getCollectionRef());
-                const existingLotes = {}; // { internalCode_expirationDate: docId }
-                currentDocsSnapshot.forEach(doc => {
-                    const data = doc.data();
-                    if (data.internalCode && data.expirationDate) {
-                        existingLotes[`${data.internalCode}_${data.expirationDate}`] = doc.id;
+                const promises = lines.map(line => {
+                    const v = line.replace(/\r/g, '').split(delimiter).map(x => x.trim());
+                    if (v.length >= 6) {
+                        const barcode = v[0].replace(/[^0-9]/g, ''), internalCode = v[1], description = v[2], laboratory = v[3];
+                        const exp = getStandardExpirationDate(v[4]), quantity = parseInt(v[5], 10) || 0;
+                        if (exp) {
+                            const data = { barcode, internalCode, description, laboratory, quantity, expirationDate: exp, searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase() };
+                            const key = `${internalCode}_${exp}`;
+                            return existing[key] ? updateDoc(doc(getCollectionRef(), existing[key]), data) : addDoc(getCollectionRef(), data);
+                        }
                     }
                 });
-
-                // Função para converter o formato de data (o ponto crítico)
-                const getStandardExpirationDate = (dateStr) => {
-                    if (!dateStr) return null;
-                    const normalized = dateStr.toLowerCase().trim();
-
-                    // 1. Tenta formato AAAA-MM (esperado)
-                    if (/^\d{4}-\d{2}$/.test(normalized)) {
-                        return normalized;
-                    }
-
-                    // 2. Tenta formato Mês-AA (ex: dez-25) - Ponto crítico do Excel BR
-                    const monthMap = { jan: '01', fev: '02', mar: '03', abr: '04', mai: '05', jun: '06', jul: '07', ago: '08', set: '09', out: '10', nov: '11', dez: '12' };
-                    const partsMonthYear = normalized.match(/([a-z]+)[-\s/]?(\d{2,4})/); 
-
-                    if (partsMonthYear) {
-                        const month = partsMonthYear[1];
-                        let year = partsMonthYear[2];
-                        let monthNumber = monthMap[month] || month;
-
-                        if (year.length === 2) {
-                            year = (parseInt(year) < 70 ? '20' : '19') + year; 
-                        }
-
-                        if (monthNumber.length === 1) monthNumber = '0' + monthNumber;
-
-                        if (year.length === 4 && monthNumber.length === 2) {
-                            return `${year}-${monthNumber}`; 
-                        }
-                    }
-                    
-                    // 3. Tenta formato MM/AAAA ou MM/AA (Comum em sistemas legados)
-                    const partsNum = normalized.match(/(\d{1,2})[/\s]?(\d{2,4})/);
-                    if (partsNum) {
-                        let monthNumber = partsNum[1].padStart(2, '0');
-                        let year = partsNum[2];
-                        if (year.length === 2) {
-                            year = (parseInt(year) < 70 ? '20' : '19') + year;
-                        }
-                        return `${year}-${monthNumber}`;
-                    }
-
-                    return null;
-                };
-                
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i];
-                    const cleanLine = line.replace(/\r/g, ''); 
-                    const values = cleanLine.split(delimiter).map(v => v.trim());
-                    
-                    // ORDEM ESPERADA: [CÓD. BARRAS, CÓD. INTERNO, DESCRIÇÃO, LABORATÓRIO, VALIDADE, QUANTIDADE]
-                    if (values.length >= 6) {
-                        const [rawBarcode, internalCode, description, laboratory, rawExpirationDate, quantityStr] = values;
-                        const quantity = parseInt(quantityStr, 10);
-                        
-                        // 1. Limpeza do Barcode (Remove notação científica/vírgulas)
-                        const barcode = rawBarcode.replace(/[^0-9]/g, ''); 
-
-                        // 2. Padronização da Validade (usando a nova função)
-                        const expirationDate = getStandardExpirationDate(rawExpirationDate);
-
-                        // Validação
-                        if (barcode && internalCode && description && expirationDate && !isNaN(quantity) && quantity >= 0) {
-                            
-                            const data = { 
-                                barcode, 
-                                internalCode, 
-                                description, 
-                                laboratory: laboratory || 'N/A', 
-                                quantity, 
-                                expirationDate, 
-                                searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase() 
-                            };
-
-                            const loteKey = `${internalCode}_${expirationDate}`;
-                            const existingDocId = existingLotes[loteKey];
-                            
-                            if (existingDocId) {
-                                // Lote existente encontrado: ATUALIZA
-                                importPromises.push(updateDoc(doc(getCollectionRef(), existingDocId), data).then(() => { 
-                                    successfulUpdates++; 
-                                }).catch((e) => { 
-                                    console.error(`Falha ao atualizar lote ${loteKey}:`, e);
-                                    failedImports++; 
-                                }));
-                            } else {
-                                // Novo Lote: ADICIONA
-                                importPromises.push(addDoc(getCollectionRef(), data).then((newDocRef) => { 
-                                    successfulAdds++; 
-                                    existingLotes[loteKey] = newDocRef.id;
-                                }).catch((e) => { 
-                                    console.error(`Falha ao adicionar novo lote ${loteKey}:`, e);
-                                    failedImports++; 
-                                }));
-                            }
-
-                        } else { 
-                            failedImports++; 
-                            console.warn(`Linha ${i + 1} ignorada: Dados incompletos, Validade (${rawExpirationDate}) ou Quantidade (${quantityStr}) inválida.`);
-                        }
-                    } else { 
-                        failedImports++; 
-                        console.warn(`Linha ${i + 1} ignorada: Número de colunas incorreto. Esperado 6, encontrado ${values.length}`);
-                    }
-                };
-
-                await Promise.all(importPromises);
-                showMessage(`Importação de Lotes concluída. Lotes Atualizados: ${successfulUpdates}. Novos Lotes Criados: ${successfulAdds}. Falhas: ${failedImports}.`, "success");
+                await Promise.all(promises);
+                showMessage("Lotes atualizados.");
                 closeImportLotesModal();
-                importButton.disabled = false;
-                importButton.textContent = 'Importar/Atualizar Lotes';
             };
-            
-            reader.onerror = () => { showMessage("Erro ao ler o arquivo.", "error"); importButton.disabled = false; importButton.textContent = 'Importar/Atualizar Lotes'; };
             reader.readAsText(file);
         }
-
-
-        // --- FUNÇÕES DE LISTAGEM E FILTRO ---
 
         function renderMedications(meds) {
             listContainer.innerHTML = ''; 
             currentFilteredList = meds;
-            
-            if (meds.length === 0) { 
-                listContainer.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-500">Nenhum medicamento encontrado.</td></tr>`; 
-                return; 
-            }
-
-            const today = new Date();
-            const currentYear = today.getFullYear();
-            const currentMonth = today.getMonth() + 1;
-            const currentMonthYear = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
-
+            const now = new Date().toISOString().slice(0, 7);
             meds.forEach(med => {
                 const displayDate = med.expirationDate ? `${med.expirationDate.split('-')[1]}/${med.expirationDate.split('-')[0]}` : 'PENDENTE';
-                let expirationClass = 'bg-white';
-                let expirationTextColor = 'text-gray-700';
-
+                let expClass = 'bg-white', textCol = 'text-gray-700';
                 if (med.expirationDate) {
-                    const monthsUntilExpiration = monthDiff(med.expirationDate, currentMonthYear);
-
-                    if (monthsUntilExpiration <= 0) { expirationClass = 'bg-red-100'; expirationTextColor = 'text-red-800 font-semibold'; } 
-                    else if (monthsUntilExpiration === 1) { expirationClass = 'bg-yellow-200'; expirationTextColor = 'text-yellow-900 font-bold'; } 
-                    else if (monthsUntilExpiration === 2) { expirationClass = 'bg-amber-200'; expirationTextColor = 'text-amber-900 font-semibold'; } 
-                    else if (monthsUntilExpiration === 3) { expirationClass = 'bg-green-100'; expirationTextColor = 'text-green-800 font-semibold'; } 
-                } else { expirationClass = 'bg-gray-200'; expirationTextColor = 'text-gray-500'; }
-
-                let quantityColor = med.quantity <= 10 ? 'text-red-600 font-semibold' : 'text-gray-900';
-                
+                    const diff = monthDiff(med.expirationDate, now);
+                    if (diff <= 0) { expClass = 'bg-red-100'; textCol = 'text-red-800 font-semibold'; }
+                    else if (diff === 1) { expClass = 'bg-yellow-200'; textCol = 'text-yellow-900 font-bold'; }
+                    else if (diff === 2) { expClass = 'bg-amber-200'; textCol = 'text-amber-900 font-semibold'; }
+                    else if (diff === 3) { expClass = 'bg-green-100'; textCol = 'text-green-800 font-semibold'; }
+                }
                 const row = document.createElement('tr');
-                row.className = `hover:bg-gray-50 ${expirationClass} border-l-4 border-r-4`;
+                row.className = `hover:bg-gray-50 ${expClass} border-l-4 border-r-4`;
                 row.innerHTML = `
-                    <td class="px-2 py-1 whitespace-nowrap text-xs ${expirationTextColor} hidden sm:table-cell">${med.barcode}</td>
-                    <td class="px-2 py-1 whitespace-nowrap text-xs ${expirationTextColor}">${med.internalCode}</td>
-                    <td class="px-2 py-1 whitespace-nowrap text-xs font-medium ${expirationTextColor}">
-                        ${med.description}<br>
-                        <span class="text-xs text-gray-500 block sm:hidden">Cód. Barras: ${med.barcode}</span>
-                        <span class="text-xs text-blue-500 block sm:hidden">Laboratório: ${med.laboratory}</span>
-                    </td>
-                    <td class="px-2 py-1 whitespace-nowrap text-xs ${expirationTextColor} hidden sm:table-cell">${med.laboratory}</td>
-                    <td class="px-2 py-1 whitespace-nowrap text-xs ${expirationTextColor}">${displayDate}</td>
-                    <td class="px-2 py-1 whitespace-nowrap text-xs ${quantityColor}">${med.quantity}</td>
-                    <td class="px-2 py-1 whitespace-nowrap text-right text-xs font-medium no-print">
-                        <button onclick="loadForEdit('${med.id}')" class="text-blue-600 hover:text-blue-900 mr-1 p-1 rounded-md hover:bg-blue-200 transition">Edit</button>
-                        <button onclick="deleteMedication('${med.id}')" class="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-red-200 transition">Exc</button>
-                    </td>
-                `;
+                    <td class="px-2 py-1 text-xs ${textCol} hidden sm:table-cell">${med.barcode}</td>
+                    <td class="px-2 py-1 text-xs ${textCol}">${med.internalCode}</td>
+                    <td class="px-2 py-1 text-xs font-medium ${textCol}">${med.description}</td>
+                    <td class="px-2 py-1 text-xs ${textCol} hidden sm:table-cell">${med.laboratory}</td>
+                    <td class="px-2 py-1 text-xs ${textCol}">${displayDate}</td>
+                    <td class="px-2 py-1 text-xs font-bold">${med.quantity}</td>
+                    <td class="px-2 py-1 text-right text-xs no-print">
+                        <button onclick="loadForEdit('${med.id}')" class="text-blue-600 mr-2">Edit</button>
+                        <button onclick="deleteMedication('${med.id}')" class="text-red-600">Exc</button>
+                    </td>`;
                 listContainer.appendChild(row);
             });
         }
 
-        window.applyFilters = function() {
-            const searchTerm = searchInput.value.toLowerCase().trim();
-            const expirationFilter = expirationFilterInput.value;
-
+        window.applyFilters = () => {
+            const search = searchInput.value.toLowerCase().trim();
+            const exp = expirationFilterInput.value;
             let filtered = allMedications;
-
-            if (searchTerm !== '') { filtered = filtered.filter(med => med.searchTerms && med.searchTerms.includes(searchTerm)); }
-
-            if (expirationFilter !== '') { filtered = filtered.filter(med => med.expirationDate && med.expirationDate === expirationFilter); }
-
+            if (search) filtered = filtered.filter(m => m.searchTerms.includes(search));
+            if (exp) filtered = filtered.filter(m => m.expirationDate === exp);
             renderMedications(filtered);
         }
-        
-        window.loadForEdit = function(id) {
+
+        window.loadForEdit = (id) => {
             const item = allMedications.find(m => m.id === id);
             if (item) {
-                openCadastroModal(); 
-                
-                document.getElementById('doc-id').value = item.id; 
-                
+                document.getElementById('medication-modal').classList.remove('hidden');
+                document.getElementById('doc-id').value = item.id;
                 document.getElementById('barcode').value = item.barcode;
                 document.getElementById('internalCode').value = item.internalCode;
                 document.getElementById('description').value = item.description;
                 document.getElementById('laboratory').value = item.laboratory;
                 document.getElementById('quantity').value = item.quantity;
-                document.getElementById('expirationDate').value = item.expirationDate || ''; 
-
-                formTitle.textContent = `Editar Lote: ${item.description} (${item.expirationDate || 'PENDENTE'})`;
-                submitButton.textContent = 'Salvar Alterações do Lote';
-                submitButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                submitButton.classList.add('bg-green-600', 'hover:bg-green-700');
+                document.getElementById('expirationDate').value = item.expirationDate || '';
+                formTitle.textContent = `Editar Lote: ${item.description}`;
+                submitButton.textContent = 'Salvar Alterações';
                 cancelButton.classList.remove('hidden');
-
-                document.getElementById('barcode').disabled = true;
-                document.getElementById('internalCode').disabled = true;
-                document.getElementById('description').disabled = true;
-                document.getElementById('laboratory').disabled = true;
+                ['barcode','internalCode','description','laboratory'].forEach(id => document.getElementById(id).disabled = true);
             }
         }
-        
-        window.quickLookup = function(query) {
-            const searchTerm = query.toLowerCase().trim();
-            if (!searchTerm) { resetForm(); return; }
 
-            const foundItem = allMedications.find(med => med.barcode.toLowerCase() === searchTerm || med.internalCode.toLowerCase() === searchTerm || med.description.toLowerCase().includes(searchTerm));
-
-            if (foundItem) { 
-                openCadastroModal(); 
-                
-                document.getElementById('doc-id').value = ''; 
-                
-                document.getElementById('barcode').value = foundItem.barcode;
-                document.getElementById('internalCode').value = foundItem.internalCode;
-                document.getElementById('description').value = foundItem.description;
-                document.getElementById('laboratory').value = foundItem.laboratory;
-
-                document.getElementById('barcode').disabled = true;
-                document.getElementById('internalCode').disabled = true;
-                document.getElementById('description').disabled = true;
-                document.getElementById('laboratory').disabled = true;
-
-                formTitle.textContent = `Lançamento de NOVO LOTE: ${foundItem.description}`;
-                submitButton.textContent = 'Adicionar Novo Lote';
-                submitButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                submitButton.classList.add('bg-green-600', 'hover:bg-green-700');
-                
-                showMessage(`Produto encontrado. Insira a Validade e Qtd do novo lote.`, "info");
-            } 
-            else { 
-                showMessage(`Produto com código/nome "${query}" não encontrado.`, "error"); 
-                resetForm();
+        window.quickLookup = (query) => {
+            const q = query.toLowerCase().trim();
+            const item = allMedications.find(m => m.barcode.toLowerCase() === q || m.internalCode.toLowerCase() === q);
+            if (item) {
+                document.getElementById('medication-modal').classList.remove('hidden');
+                ['barcode','internalCode','description','laboratory'].forEach(id => { document.getElementById(id).value = item[id]; document.getElementById(id).disabled = true; });
+                document.getElementById('quantity').value = '';
+                document.getElementById('expirationDate').value = '';
+                formTitle.textContent = `Novo Lote: ${item.description}`;
+                submitButton.textContent = 'Adicionar Lote';
             }
-        };
+        }
 
-        // --- FUNÇÕES DE EXPORTAÇÃO E IMPRESSÃO (EXISTENTES) ---
-        window.exportToCsv = function() {
-            if (currentFilteredList.length === 0) { showMessage("Nenhum item na lista para exportar.", "error"); return; }
-            const headers = ["Cód. Barras", "Cód. Interno", "Descrição", "Laboratório", "Validade (MM/AAAA)", "Quantidade"];
-            const delimiter = ";";
-            const csvRows = [];
-            csvRows.push(headers.join(delimiter));
-
-            currentFilteredList.forEach(med => {
-                const displayDate = med.expirationDate ? `${med.expirationDate.split('-')[1]}/${med.expirationDate.split('-')[0]}` : 'PENDENTE';
-                const row = [ med.barcode, med.internalCode, med.description.replace(/;/g, ","), med.laboratory, displayDate, med.quantity ].join(delimiter);
-                csvRows.push(row);
+        window.openScannerModal = (mode) => {
+            document.getElementById('scanner-modal').classList.remove('hidden');
+            window.scannerMode = mode;
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start({ facingMode: "environment" }, { fps: 30, qrbox: { width: 150, height: 80 } }, (text) => {
+                window.closeScannerModal();
+                if (mode === 'BUSCA') { searchInput.value = text; applyFilters(); }
+                else { quickSearchInput.value = text; quickLookup(text); }
             });
-
-            const csvString = csvRows.join('\n');
-            const blob = new Blob(["\uFEFF", csvString], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.setAttribute('href', url);
-            link.setAttribute('download', `relatorio_validade_souzafarma_${new Date().toISOString().slice(0, 10)}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            showMessage("Relatório CSV exportado com sucesso!", "success");
         }
 
-        window.printFilteredList = function() {
-            if (currentFilteredList.length === 0) { showMessage("Nenhum item para imprimir. Filtre a lista primeiro.", "error"); return; }
-            const today = new Date().toLocaleDateString('pt-BR');
-            const listHTML = currentFilteredList.map(med => {
-                const displayDate = med.expirationDate ? `${med.expirationDate.split('-')[1]}/${med.expirationDate.split('-')[0]}` : 'PENDENTE';
-                return `<tr><td>${med.barcode}</td><td>${med.internalCode}</td><td>${med.description} (${med.laboratory})</td><td>${displayDate}</td><td>${med.quantity}</td></tr>`;
-            }).join('');
-
-            const printWindow = window.open('', '', 'height=600,width=800');
-            printWindow.document.write('<html><head><title>Souza Farma - Relatório de Validade</title>');
-            printWindow.document.write('<style>body { font-family: sans-serif; padding: 20px; }.print-header { text-align: center; margin-bottom: 20px; } table { width: 100%; border-collapse: collapse; margin-top: 20px; } th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 10pt; }</style>');
-            printWindow.document.write('</head><body>');
-            printWindow.document.write('<div class="print-header">');
-            printWindow.document.write(`<h1>Souza Farma - Relatório de Validade</h1>`);
-            printWindow.document.write(`<p>Data do Relatório: ${today}</p>`);
-            
-            const filterMonth = expirationFilterInput.value;
-            if (filterMonth) { const [year, month] = filterMonth.split('-'); printWindow.document.write(`<p>Filtro Aplicado: Vencimento em ${month}/${year}</p>`); } 
-            else if (searchInput.value) { printWindow.document.write(`<p>Filtro Aplicado: Busca por "${searchInput.value}"</p>`); }
-            printWindow.document.write('</div>');
-
-            printWindow.document.write('<table>');
-            printWindow.document.write('<thead><tr><th>Cód. Barras</th><th>Cód. Interno</th><th>Descrição (Laboratório)</th><th>Validade</th><th>Qtd</th></tr></thead>');
-            printWindow.document.write('<tbody>');
-            printWindow.document.write(listHTML);
-            printWindow.document.write('</tbody></table>');
-            printWindow.document.close();
-            
-            printWindow.onload = function() { printWindow.print(); printWindow.close(); };
+        window.closeScannerModal = () => {
+            document.getElementById('scanner-modal').classList.add('hidden');
+            if (html5QrCode) html5QrCode.stop();
         }
 
-
-        // --- FUNÇÕES DE SCANNER (EXISTENTES) ---
-
-        window.openScannerModal = function(mode) {
-            if (typeof Html5Qrcode === 'undefined') {
-                 showMessage("Biblioteca de scanner não carregada.", "error");
-                 return;
-            }
-            if (!isFirebaseReady) {
-                showMessage("A câmera está disponível, mas **a persistência de dados está desativada**. Use o modo Prévia/Hospedado para salvar.", "error");
-            }
-            scannerModal.classList.remove('hidden');
-            window.scannerMode = mode; 
-
-            html5QrCode = new Html5Qrcode("reader"); 
-                
-            const QRBOX_WIDTH = 150;
-            const QRBOX_HEIGHT = 80;
-                
-            const config = { 
-                fps: 30, 
-                qrbox: { width: QRBOX_WIDTH, height: QRBOX_HEIGHT }, 
-                aspectRatio: 1.0, 
-                supportedScanTypes: [Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.EAN_13], 
-                rememberLastUsedCamera: true 
-            };
-                
-            const videoConstraints = {
-                facingMode: "environment" 
-            };
-
-            html5QrCode.start(videoConstraints, config, onScanSuccess, onScanError)
-                .catch(err => { 
-                    showMessage("Erro ao iniciar a câmera: " + (err.message || 'Verifique as permissões de câmera.'), "error"); 
-                    closeScannerModal(); 
-                });
-        }
-
-        window.closeScannerModal = function() {
-            scannerModal.classList.add('hidden');
-            if (html5QrCode && html5QrCode.isScanning) { 
-                html5QrCode.stop().catch(err => { console.error("Erro ao parar a câmera:", err); }); 
-            }
-            html5QrCode = null; 
-        }
-            
-        function onScanSuccess(decodedText) { 
-            closeScannerModal();
-            
-            if (window.scannerMode === 'BUSCA') {
-                const searchInput = document.getElementById('search-input');
-                if (searchInput) {
-                    searchInput.value = decodedText;
-                    applyFilters(); 
-                    showMessage(`Busca ativada pelo código: ${decodedText}`, "success");
-                }
-            } else { 
-                const quickSearchInput = document.getElementById('quick-search-input');
-                if (quickSearchInput) {
-                    quickSearchInput.value = decodedText;
-                    quickLookup(decodedText); 
-                    showMessage(`Código de barras lido: ${decodedText}`, "success");
-                }
-            }
-        }
-        function onScanError(errorMessage) { /* Silencia erros de scan para não quebrar a varredura contínua */ }
-
-
-        // Inicia o aplicativo
-        initializeFirebase();
+        bootstrap();
     </script>
 </body>
 </html>
