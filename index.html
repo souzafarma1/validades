@@ -206,9 +206,9 @@
     <div id="import-lotes-modal" class="modal-overlay hidden no-print">
         <div class="modal-content">
             <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="closeImportLotesModal()"> &times; </button>
-            <h2 class="text-2xl font-semibold mb-6 text-orange-700">Atualização de Lotes em Massa</h2>
+            <h2 class="text-2xl font-semibold mb-6 text-orange-700">Atualização Inteligente de Lotes</h2>
             <p class="text-sm text-gray-600 mb-4 p-3 bg-red-50 rounded-lg border border-red-200">
-                **IMPORTANTE:** Selecione seu arquivo Excel (**XLSX/XLS**) original. Ordem das colunas: **BARRAS, INTERNO, DESCRIÇÃO, LABORATÓRIO, VALIDADE, QUANTIDADE.** O sistema atualizará os cadastros sem validade se encontrar o mesmo código interno.
+                **IMPORTANTE:** Selecione seu arquivo Excel (**XLSX/XLS**) original. Ordem das colunas: **BARRAS, INTERNO, DESCRIÇÃO, LABORATÓRIO, VALIDADE, QUANTIDADE.** O sistema atualizará os cadastros "PENDENTES" automaticamente.
             </p>
             <div class="mb-4"> <label for="bulk-lotes-file-input" class="block text-sm font-medium text-gray-700 mb-1"> Arquivo Excel ou CSV: </label> <input type="file" id="bulk-lotes-file-input" accept=".xlsx, .xls, .csv, .tsv" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 transition duration-150 bg-white"> </div>
             <div class="mb-6">
@@ -219,7 +219,7 @@
                     <option value="\t">Tabulação (TSV)</option>
                 </select>
             </div>
-            <button id="import-lotes-button" onclick="handleBulkLotesImport()" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-orange-500 focus:ring-opacity-50"> Atualizar Dados </button>
+            <button id="import-lotes-button" onclick="handleBulkLotesImport()" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-orange-500 focus:ring-opacity-50"> Atualizar Lotes </button>
             <button type="button" class="w-full mt-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out" onclick="closeImportLotesModal()"> Cancelar </button>
         </div>
     </div>
@@ -271,7 +271,7 @@
         }
 
         function getStandardExpirationDate(dateStr) {
-            if (!dateStr) return null;
+            if (!dateStr || dateStr === "" || dateStr === "PENDENTE") return null;
             const normalized = dateStr.toString().toLowerCase().trim();
             if (/^\d{4}-\d{2}$/.test(normalized)) return normalized;
             const partsMonthYear = normalized.match(/([a-z]+)[-\s/]?(\d{2,4})/); 
@@ -364,8 +364,8 @@
 
         async function bootstrap() {
             try {
-                const app = initializeApp(APP_CONFIG);
-                auth = getAuth(app); db = getFirestore(app);
+                const appInstance = initializeApp(APP_CONFIG);
+                auth = getAuth(appInstance); db = getFirestore(appInstance);
                 if (initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
                 else await signInAnonymously(auth);
                 isFirebaseReady = true;
@@ -409,22 +409,26 @@
             try {
                 const rows = await processFile(file, delimiter);
                 const promises = [];
-                rows.forEach(v => {
+                // Pula a primeira linha se for cabeçalho
+                const startIdx = (rows[0][0].toString().toLowerCase().includes('barra') || rows[0][2].toString().toLowerCase().includes('descri')) ? 1 : 0;
+
+                for (let i = startIdx; i < rows.length; i++) {
+                    const v = rows[i];
                     if (v.length >= 4) {
-                        let barcode = cleanBarcode(v[0]), internalCode = v[1], description = v[2], laboratory = v[3];
+                        let barcode = cleanBarcode(v[0]), internalCode = v[1] ? v[1].toString().trim() : "", description = v[2], laboratory = v[3];
                         let expirationDate = v.length >= 6 ? getStandardExpirationDate(v[4]) : null;
                         let quantity = v.length >= 6 ? (parseInt(v[5], 10) || 0) : (parseInt(v[4], 10) || 0);
-                        if (barcode || internalCode) {
+                        if (internalCode) {
                             promises.push(addDoc(getCollectionRef(), { barcode, internalCode, description, laboratory, quantity, expirationDate, searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase(), launchedAt: Date.now() }));
                         }
                     }
-                });
+                }
                 await Promise.all(promises);
                 showMessage("Importação concluída."); closeImportModal();
             } catch (e) { showMessage("Erro ao ler arquivo.", "error"); }
         }
 
-        // --- ATUALIZADO: LÓGICA DE ATUALIZAÇÃO INTELIGENTE PARA EVITAR DUPLICADOS ---
+        // --- ATUALIZAÇÃO DE LOTES COM TRATAMENTO DE ERROS INDIVIDUAL ---
         window.handleBulkLotesImport = async () => {
             if (!isFirebaseReady) return;
             const file = document.getElementById('bulk-lotes-file-input').files[0];
@@ -435,40 +439,56 @@
                 const snap = await getDocs(getCollectionRef());
                 const docsData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 
+                let successCount = 0;
+                let errorCount = 0;
                 const promises = [];
-                rows.forEach(v => {
-                    if (v.length >= 5) {
-                        const barcode = cleanBarcode(v[0]), internalCode = v[1].toString().trim();
-                        const description = v[2], laboratory = v[3];
-                        const exp = getStandardExpirationDate(v[4]), quantity = v.length >= 6 ? (parseInt(v[5], 10) || 0) : 0;
-                        
-                        if (exp && internalCode) {
-                            // 1. Procura primeiro por um cadastro deste item SEM validade (cadastro inicial)
-                            const pendingDoc = docsData.find(d => d.internalCode === internalCode && !d.expirationDate);
-                            // 2. Se não encontrar um vazio, procura por um que tenha a MESMA validade
-                            const sameExpDoc = docsData.find(d => d.internalCode === internalCode && d.expirationDate === exp);
+
+                // Pula cabeçalho se existir
+                const startIdx = (rows[0][0].toString().toLowerCase().includes('barra') || rows[0][1].toString().toLowerCase().includes('interno')) ? 1 : 0;
+
+                for (let i = startIdx; i < rows.length; i++) {
+                    const v = rows[i];
+                    try {
+                        if (v.length >= 5) {
+                            const barcode = cleanBarcode(v[0]);
+                            const internalCode = v[1] ? v[1].toString().trim() : "";
+                            const description = v[2];
+                            const laboratory = v[3];
+                            const exp = getStandardExpirationDate(v[4]);
+                            const quantity = v.length >= 6 ? (parseInt(v[5], 10) || 0) : 0;
                             
-                            const data = { barcode, internalCode, description, laboratory, quantity, expirationDate: exp, searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase(), launchedAt: Date.now() };
-                            
-                            if (pendingDoc) {
-                                // Encontrou o cadastro inicial "vazio": ATUALIZA ELE
-                                promises.push(updateDoc(doc(getCollectionRef(), pendingDoc.id), data));
-                                // Remove do cache local para não atualizar o mesmo item duas vezes na mesma planilha
-                                const idx = docsData.indexOf(pendingDoc);
-                                if(idx > -1) docsData.splice(idx, 1);
-                            } else if (sameExpDoc) {
-                                // Encontrou um lote com a mesma validade: SÓ ATUALIZA QUANTIDADE
-                                promises.push(updateDoc(doc(getCollectionRef(), sameExpDoc.id), data));
+                            if (internalCode && exp) {
+                                // 1. Procura item PENDENTE (sem validade) para converter
+                                const pendingDoc = docsData.find(d => d.internalCode === internalCode && !d.expirationDate);
+                                // 2. Procura item com a MESMA VALIDADE para somar/atualizar
+                                const sameExpDoc = docsData.find(d => d.internalCode === internalCode && d.expirationDate === exp);
+                                
+                                const data = { barcode, internalCode, description, laboratory, quantity, expirationDate: exp, searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase(), launchedAt: Date.now() };
+                                
+                                if (pendingDoc) {
+                                    promises.push(updateDoc(doc(getCollectionRef(), pendingDoc.id), data));
+                                    const idx = docsData.indexOf(pendingDoc);
+                                    if(idx > -1) docsData.splice(idx, 1);
+                                } else if (sameExpDoc) {
+                                    promises.push(updateDoc(doc(getCollectionRef(), sameExpDoc.id), data));
+                                } else {
+                                    promises.push(addDoc(getCollectionRef(), data));
+                                }
+                                successCount++;
                             } else {
-                                // É um lote novo para um item que já tem validade: ADICIONA NOVO LOTE
-                                promises.push(addDoc(getCollectionRef(), data));
+                                errorCount++;
                             }
                         }
+                    } catch (lineError) {
+                        errorCount++;
                     }
-                });
+                }
                 await Promise.all(promises);
-                showMessage("Atualização inteligente concluída."); closeImportLotesModal();
-            } catch (e) { console.error(e); showMessage("Erro na atualização.", "error"); }
+                showMessage(`Processado: ${successCount} sucessos. ${errorCount} linhas ignoradas.`); closeImportLotesModal();
+            } catch (e) { 
+                console.error(e); 
+                showMessage("Erro crítico ao processar planilha Excel.", "error"); 
+            }
         }
 
         function renderMedications(meds) {
