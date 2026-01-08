@@ -293,12 +293,12 @@
             return collection(db, 'artifacts', appId, 'public', 'data', COLLECTION_NAME); 
         }
         
+        // AJUSTADO: Agora ordena pelo tempo de criação/lançamento (do mais novo para o mais antigo)
         function sortAndRender() {
             allMedications.sort((a, b) => {
-                if (!a.expirationDate && b.expirationDate) return -1;
-                if (a.expirationDate && !b.expirationDate) return 1;
-                if (!a.expirationDate && !b.expirationDate) return 0;
-                return a.expirationDate.localeCompare(b.expirationDate);
+                const timeA = a.launchedAt || 0;
+                const timeB = b.launchedAt || 0;
+                return timeB - timeA; 
             });
             applyFilters();
         }
@@ -380,7 +380,19 @@
             const laboratory = document.getElementById('laboratory').value.trim();
             const quantity = parseInt(document.getElementById('quantity').value, 10);
             const expirationDate = document.getElementById('expirationDate').value;
-            const data = { barcode, internalCode, description, laboratory, quantity, expirationDate: expirationDate || null, searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase() };
+            
+            // Adicionado campo launchedAt para controle de ordem
+            const data = { 
+                barcode, 
+                internalCode, 
+                description, 
+                laboratory, 
+                quantity, 
+                expirationDate: expirationDate || null, 
+                searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase(),
+                launchedAt: Date.now() 
+            };
+
             try {
                 if (docId) await updateDoc(doc(getCollectionRef(), docId), data);
                 else await addDoc(getCollectionRef(), data);
@@ -406,7 +418,6 @@
             }
         }
 
-        // --- FUNÇÃO DE IMPORTAÇÃO INICIAL (AJUSTADA PARA ACEITAR VALIDADE) ---
         window.handleBulkImport = async function() {
             if (!isFirebaseReady) return;
             const file = document.getElementById('bulk-file-input').files[0];
@@ -420,16 +431,22 @@
                     if (v.length >= 5) {
                         let barcode = v[0], internalCode = v[1], description = v[2], laboratory = v[3];
                         let expirationDate = null, quantity = 0;
-                        
-                        // Detecta automaticamente se tem 6 colunas (com validade) ou 5
                         if (v.length >= 6) {
                             expirationDate = getStandardExpirationDate(v[4]);
                             quantity = parseInt(v[5], 10) || 0;
                         } else {
                             quantity = parseInt(v[4], 10) || 0;
                         }
-                        
-                        const data = { barcode, internalCode, description, laboratory, quantity, expirationDate, searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase() };
+                        const data = { 
+                            barcode, 
+                            internalCode, 
+                            description, 
+                            laboratory, 
+                            quantity, 
+                            expirationDate, 
+                            searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase(),
+                            launchedAt: Date.now() 
+                        };
                         return addDoc(getCollectionRef(), data);
                     }
                 });
@@ -458,7 +475,16 @@
                         const barcode = v[0].replace(/[^0-9]/g, ''), internalCode = v[1], description = v[2], laboratory = v[3];
                         const exp = getStandardExpirationDate(v[4]), quantity = parseInt(v[5], 10) || 0;
                         if (exp) {
-                            const data = { barcode, internalCode, description, laboratory, quantity, expirationDate: exp, searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase() };
+                            const data = { 
+                                barcode, 
+                                internalCode, 
+                                description, 
+                                laboratory, 
+                                quantity, 
+                                expirationDate: exp, 
+                                searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase(),
+                                launchedAt: Date.now() 
+                            };
                             const key = `${internalCode}_${exp}`;
                             return existing[key] ? updateDoc(doc(getCollectionRef(), existing[key]), data) : addDoc(getCollectionRef(), data);
                         }
@@ -477,7 +503,7 @@
             const now = new Date().toISOString().slice(0, 7);
             meds.forEach(med => {
                 const displayDate = med.expirationDate ? `${med.expirationDate.split('-')[1]}/${med.expirationDate.split('-')[0]}` : 'PENDENTE';
-                let expClass = 'bg-white', textCol = 'text-black font-bold'; // Alterado para PRETO e NEGRITO
+                let expClass = 'bg-white', textCol = 'text-black font-bold';
                 
                 if (med.expirationDate) {
                     const diff = monthDiff(med.expirationDate, now);
