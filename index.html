@@ -293,12 +293,26 @@
             return collection(db, 'artifacts', appId, 'public', 'data', COLLECTION_NAME); 
         }
         
-        // AJUSTADO: Agora ordena pelo tempo de criação/lançamento (do mais novo para o mais antigo)
+        // AJUSTADO: Prioridade para Vencidos ou Próximos de Vencer (Data Ascendente)
+        // Itens sem validade (PENDENTE) vão para o final.
         function sortAndRender() {
             allMedications.sort((a, b) => {
-                const timeA = a.launchedAt || 0;
-                const timeB = b.launchedAt || 0;
-                return timeB - timeA; 
+                // 1. Tratamento para itens sem validade (vão para o final)
+                if (!a.expirationDate && b.expirationDate) return 1;
+                if (a.expirationDate && !b.expirationDate) return -1;
+                if (!a.expirationDate && !b.expirationDate) {
+                    return (b.launchedAt || 0) - (a.launchedAt || 0); // Desempate por lançamento
+                }
+
+                // 2. Ordenação por validade (Mais antiga/Vencida primeiro no topo)
+                const dateCompare = a.expirationDate.localeCompare(b.expirationDate);
+                
+                // 3. Se as datas forem iguais, o lançamento mais recente fica em cima
+                if (dateCompare === 0) {
+                    return (b.launchedAt || 0) - (a.launchedAt || 0);
+                }
+                
+                return dateCompare;
             });
             applyFilters();
         }
@@ -381,7 +395,6 @@
             const quantity = parseInt(document.getElementById('quantity').value, 10);
             const expirationDate = document.getElementById('expirationDate').value;
             
-            // Adicionado campo launchedAt para controle de ordem
             const data = { 
                 barcode, 
                 internalCode, 
