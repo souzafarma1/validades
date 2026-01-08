@@ -34,7 +34,7 @@
     <div id="app" class="container">
         <header class="py-6 mb-8 bg-white shadow-md rounded-lg no-print">
             <h1 class="text-3xl font-bold text-center text-red-700">Souza Farma - Controle de Validade (ONLINE)</h1>
-            <p class="text-center text-gray-500 mt-2">Pronto para Hospedagem Externa e Acesso Móvel.</p>
+            <p class="text-center text-gray-500 mt-2">Sistema em Nuvem para Controle de Estoque.</p>
         </header>
 
         <div id="message-container" class="fixed top-4 right-4 space-y-2 no-print"></div>
@@ -263,30 +263,23 @@
 
         // --- FUNÇÕES DE UTILIDADE ---
 
-        // AJUSTADO: Função ultra-robusta para converter notação científica do Excel em número completo
+        // AJUSTADO: Função ultra-robusta para converter notação científica do Excel (E+) em número de 13 dígitos
         function cleanBarcode(raw) {
             if (!raw) return "";
-            let str = raw.toString().trim();
+            let str = raw.toString().trim().replace(',', '.'); // Corrige vírgula para ponto decimal
             
-            // Corrige locale do Excel (vírgula decimal)
-            str = str.replace(',', '.');
-
             // Se o texto contiver notação científica (E+)
             if (str.toUpperCase().includes('E+')) {
                 try {
-                    // Tenta converter usando formatação de precisão total
-                    // Ex: "7,89857E+12" -> 7898570000000 (ou o valor exato se houver precisão no Number)
-                    let num = parseFloat(str);
-                    if (!isNaN(num)) {
-                        // toFixed(0) garante que não tenha decimais e nem notação científica no retorno
-                        return num.toFixed(0);
-                    }
+                    // Number(str) interpreta o E+12. toLocaleString com as opções abaixo
+                    // garante que o número seja retornado como string inteira sem abreviação
+                    return Number(str).toLocaleString('fullwide', {useGrouping:false});
                 } catch(e) {
                     console.error("Erro na conversão científica:", e);
                 }
             }
             
-            // Fallback: Remove tudo o que não é dígito
+            // Remove qualquer caractere que não seja número (limpeza padrão)
             return str.replace(/[^0-9]/g, '');
         }
 
@@ -322,7 +315,6 @@
         
         function sortAndRender() {
             allMedications.sort((a, b) => {
-                // 1. Tratamento para itens sem validade (vão para o final)
                 if (!a.expirationDate && b.expirationDate) return 1;
                 if (a.expirationDate && !b.expirationDate) return -1;
                 if (!a.expirationDate && !b.expirationDate) {
@@ -508,7 +500,7 @@
                     const v = line.replace(/\r/g, '').split(delimiter).map(x => x.trim());
                     if (v.length >= 6) {
                         const rawBarcode = v[0], internalCode = v[1], description = v[2], laboratory = v[3];
-                        const barcode = cleanBarcode(rawBarcode); 
+                        const barcode = cleanBarcode(rawBarcode); // AJUSTADO: Mesmo tratamento robusto do Import Inicial
                         const exp = getStandardExpirationDate(v[4]), quantity = parseInt(v[5], 10) || 0;
                         if (exp) {
                             const data = { 
