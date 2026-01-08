@@ -63,7 +63,7 @@
                 </div>
 
                 <div class="bg-blue-50 p-5 rounded-xl border border-blue-100 shadow-inner text-center">
-                    <h3 class="text-lg font-semibold mb-2 text-blue-700 tracking-tight uppercase text-xs font-black">Busca Rápida - LOTE</h3>
+                    <h3 class="text-lg font-semibold mb-2 text-blue-700 tracking-tight uppercase text-xs font-black">Lançar Lote Rápido</h3>
                     <div class="flex space-x-2">
                         <input type="text" id="quick-search-input" class="flex-grow p-2 border border-blue-300 rounded-lg focus:ring-blue-500 text-sm shadow-sm"
                             placeholder="Ler código..." onchange="window.quickLookup(this.value)">
@@ -127,11 +127,11 @@
         </div>
     </div>
 
-    <!-- Modais -->
+    <!-- Modal Cadastro -->
     <div id="medication-modal" class="modal-overlay hidden no-print">
         <div class="modal-content shadow-2xl">
             <button class="absolute top-4 right-4 text-gray-400 text-2xl hover:text-gray-800" onclick="window.closeModal()">&times;</button>
-            <h2 class="text-2xl font-bold mb-6 text-blue-700" id="form-title">Cadastro de Lote</h2>
+            <h2 class="text-2xl font-bold mb-6 text-blue-700" id="form-title">Dados do Produto</h2>
             <form id="medication-form" class="space-y-4">
                 <input type="hidden" id="doc-id">
                 <div class="grid grid-cols-2 gap-4">
@@ -149,7 +149,7 @@
         </div>
     </div>
 
-    <!-- Modais de Importação -->
+    <!-- Modal Importação Inicial -->
     <div id="import-modal" class="modal-overlay hidden no-print">
         <div class="modal-content shadow-2xl">
             <button class="absolute top-4 right-4 text-gray-400 text-2xl" onclick="window.closeImportModal()">&times;</button>
@@ -164,6 +164,7 @@
         </div>
     </div>
 
+    <!-- Modal Atualizar Lotes (Excel) -->
     <div id="import-lotes-modal" class="modal-overlay hidden no-print">
         <div class="modal-content shadow-2xl">
             <button class="absolute top-4 right-4 text-gray-400 text-2xl" onclick="window.closeImportLotesModal()">&times;</button>
@@ -187,7 +188,7 @@
             </div>
             <div id="reader"></div>
             <div class="p-6 bg-gray-50 text-center border-t border-gray-100">
-                <p class="text-blue-800 text-sm font-bold uppercase tracking-widest italic">iPhone 7 / 12 (Alta Precisão)</p>
+                <p class="text-blue-800 text-sm font-bold uppercase tracking-widest italic">Alta Precisão (iPhone 7 / 12)</p>
             </div>
         </div>
     </div>
@@ -214,8 +215,9 @@
 
                 onAuthStateChanged(auth, u => { 
                     if(u) { 
-                        document.getElementById('db-status').textContent = "✅ Sistema Ligado";
+                        document.getElementById('db-status').textContent = "✅ Base Conectada";
                         document.getElementById('db-status').classList.replace('text-gray-400', 'text-green-600');
+                        document.getElementById('db-status').classList.remove('animate-pulse');
                         startSync(); 
                     } 
                 });
@@ -228,9 +230,8 @@
         function startSync() {
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), snap => {
                 allMedications = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                // Força a renderização imediata, mesmo se o filtro estiver vazio
                 window.applyFilters();
-            }, err => {
-                window.showMessage("Erro de acesso aos dados.", "error");
             });
         }
 
@@ -240,7 +241,7 @@
             document.getElementById('medication-modal').classList.add('hidden');
             document.getElementById('medication-form').reset();
             document.getElementById('doc-id').value = '';
-            document.getElementById('form-title').textContent = "Cadastro de Lote";
+            document.getElementById('form-title').textContent = "Dados do Produto";
             document.getElementById('barcode').disabled = false;
         };
         window.openImportModal = () => document.getElementById('import-modal').classList.remove('hidden');
@@ -249,8 +250,8 @@
         window.closeImportLotesModal = () => document.getElementById('import-lotes-modal').classList.add('hidden');
 
         window.applyFilters = () => {
-            const searchInputEl = document.getElementById('search-input');
-            const term = (searchInputEl ? searchInputEl.value : "").toLowerCase().trim();
+            const inp = document.getElementById('search-input');
+            const term = (inp && inp.value) ? inp.value.toLowerCase().trim() : "";
             let filtered = allMedications;
             if (term) filtered = filtered.filter(m => (m.barcode + (m.internalCode||'') + m.description).toLowerCase().includes(term));
             filtered.sort((a, b) => (a.expirationDate || '9999-12').localeCompare(b.expirationDate || '9999-12'));
@@ -265,7 +266,14 @@
 
         function renderList(meds) {
             const list = document.getElementById('medication-list');
-            if (!meds.length) { list.innerHTML = '<tr><td colspan="7" class="p-20 text-center text-gray-400 font-bold uppercase text-xs">Inventário Vazio</td></tr>'; return; }
+            if (!meds.length) { 
+                if (allMedications.length > 0) {
+                   list.innerHTML = '<tr><td colspan="7" class="p-20 text-center text-gray-400 font-bold uppercase text-xs">Nenhum resultado para a busca</td></tr>';
+                } else {
+                   list.innerHTML = '<tr><td colspan="7" class="p-20 text-center text-gray-400 font-bold uppercase text-xs">Inventário Vazio</td></tr>';
+                }
+                return; 
+            }
             list.innerHTML = '';
             const curMonth = new Date().toISOString().slice(0, 7);
             
@@ -287,7 +295,7 @@
                     <td class="px-4 py-4 font-bold text-gray-900">${m.expirationDate ? m.expirationDate.split('-').reverse().join('/') : '---'}</td>
                     <td class="px-4 py-4 text-center font-black text-gray-900">${m.quantity}</td>
                     <td class="px-4 py-4 text-right no-print">
-                        <div class="flex items-center justify-end space-x-4">
+                        <div class="flex items-center justify-end space-x-6">
                             <span onclick="window.loadForEdit('${m.id}')" class="action-link text-blue-600">Editar</span>
                             <span onclick="window.deleteMedication('${m.id}')" class="action-link text-red-600">Excluir</span>
                         </div>
@@ -300,7 +308,7 @@
         function monthDiff(d1, d2) {
             const [y1, m1] = d1.split('-').map(Number);
             const [y2, m2] = d2.split('-').map(Number);
-            return (y1 - y2) * 12 + (month1 - month2);
+            return (y1 - y2) * 12 + (m1 - m2);
         }
 
         // --- SCANNER OTIMIZADO ---
@@ -346,7 +354,7 @@
                 document.getElementById('laboratory').value = found.laboratory;
                 document.getElementById('form-title').textContent = "Adicionar Novo Lote";
                 document.getElementById('barcode').disabled = true;
-            } else { window.showMessage("Produto não localizado.", "error"); }
+            } else { window.showMessage("Não localizado.", "error"); }
         };
 
         window.loadForEdit = (id) => {
@@ -365,7 +373,7 @@
             }
         };
 
-        window.deleteMedication = async (id) => { if(confirm('Excluir este lote?')) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id)); };
+        window.deleteMedication = async (id) => { if(confirm('Apagar este lote permanentemente?')) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id)); };
 
         window.confirmDeleteAll = async () => {
             if(confirm('🛑 ATENÇÃO: Deseja apagar TODO o inventário?')) {
