@@ -24,7 +24,7 @@
         @media print {
             .no-print { display: none !important; }
             table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 10pt; }
+            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 10pt; color: black !important; }
         }
     </style>
 </head>
@@ -47,7 +47,7 @@
                     <img src="https://raw.githubusercontent.com/souzaimportadosslz-bot/controledevalidades/main/souza_farma_logo.png"
                                 alt="Logomarca Souza Farma"
                                 class="logo-img"
-                                onerror="this.onerror=null; this.src='https://placehold.co/600x200/DC3545/FFFFFF?text=SOUZA+FARMA+LOGO+FALHOU';">
+                                onerror="this.onerror=null; this.src='https://placehold.co/600x200/DC3545/FFFFFF?text=SOUZA+FARMA';">
                     
                     <div class="flex flex-col space-y-4 mb-6">
                         <button onclick="openCadastroModal()"
@@ -185,7 +185,7 @@
             <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="closeImportModal()"> &times; </button>
             <h2 class="text-2xl font-semibold mb-6 text-purple-700">Importação Inicial de Produtos</h2>
             <p class="text-sm text-gray-600 mb-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                **Instruções:** Exporte sua planilha do Excel para o formato **CSV (Ponto e Vírgula)** e selecione o arquivo abaixo. A ordem das colunas pode ser de 5 ou 6: **BARRAS, INTERNO, DESCRIÇÃO, LABORATÓRIO, VALIDADE, QUANTIDADE.**
+                **Instruções:** Exporte sua planilha do Excel para o formato **CSV (Ponto e Vírgula)**. A ordem das colunas PODE SER: **BARRAS, INTERNO, DESCRIÇÃO, LABORATÓRIO, VALIDADE, QUANTIDADE.** (A Validade é opcional nesta tela).
             </p>
             <div class="mb-4"> <label for="bulk-file-input" class="block text-sm font-medium text-gray-700 mb-1"> Arquivo CSV/TSV: </label> <input type="file" id="bulk-file-input" accept=".csv, .tsv" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 transition duration-150 bg-white"> </div>
             <div class="mb-6">
@@ -197,7 +197,7 @@
                 </select>
             </div>
             <button id="import-button" onclick="handleBulkImport()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-purple-500 focus:ring-opacity-50"> Importar Produtos </button>
-            <button type="button" id="cancel-edit-button" class="w-full mt-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out" onclick="closeImportModal()"> Cancelar </button>
+            <button type="button" class="w-full mt-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out" onclick="closeImportModal()"> Cancelar </button>
         </div>
     </div>
 
@@ -267,6 +267,7 @@
             if (!dateStr) return null;
             const normalized = dateStr.toLowerCase().trim();
             if (/^\d{4}-\d{2}$/.test(normalized)) return normalized;
+            
             const partsMonthYear = normalized.match(/([a-z]+)[-\s/]?(\d{2,4})/); 
             if (partsMonthYear) {
                 const month = partsMonthYear[1];
@@ -276,6 +277,7 @@
                 if (monthNumber.length === 1) monthNumber = '0' + monthNumber;
                 return `${year}-${monthNumber}`;
             }
+            
             const partsNum = normalized.match(/(\d{1,2})[/\s]?(\d{2,4})/);
             if (partsNum) {
                 let monthNumber = partsNum[1].padStart(2, '0');
@@ -330,8 +332,11 @@
         const submitButton = document.getElementById('submit-button');
         const cancelButton = document.getElementById('cancel-edit-button');
 
+        window.openCadastroModal = function() { document.getElementById('medication-modal').classList.remove('hidden'); resetForm(); }
         window.closeModal = function() { document.getElementById('medication-modal').classList.add('hidden'); resetForm(); }
+        window.openImportModal = function() { document.getElementById('import-modal').classList.remove('hidden'); }
         window.closeImportModal = function() { document.getElementById('import-modal').classList.add('hidden'); }
+        window.openImportLotesModal = function() { document.getElementById('import-lotes-modal').classList.remove('hidden'); }
         window.closeImportLotesModal = function() { document.getElementById('import-lotes-modal').classList.add('hidden'); }
         window.resetForm = function() {
             form.reset();
@@ -401,7 +406,7 @@
             }
         }
 
-        // --- FUNÇÃO DE IMPORTAÇÃO INICIAL (AJUSTADA) ---
+        // --- FUNÇÃO DE IMPORTAÇÃO INICIAL (AJUSTADA PARA ACEITAR VALIDADE) ---
         window.handleBulkImport = async function() {
             if (!isFirebaseReady) return;
             const file = document.getElementById('bulk-file-input').files[0];
@@ -415,12 +420,15 @@
                     if (v.length >= 5) {
                         let barcode = v[0], internalCode = v[1], description = v[2], laboratory = v[3];
                         let expirationDate = null, quantity = 0;
+                        
+                        // Detecta automaticamente se tem 6 colunas (com validade) ou 5
                         if (v.length >= 6) {
                             expirationDate = getStandardExpirationDate(v[4]);
                             quantity = parseInt(v[5], 10) || 0;
                         } else {
                             quantity = parseInt(v[4], 10) || 0;
                         }
+                        
                         const data = { barcode, internalCode, description, laboratory, quantity, expirationDate, searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase() };
                         return addDoc(getCollectionRef(), data);
                     }
@@ -469,26 +477,28 @@
             const now = new Date().toISOString().slice(0, 7);
             meds.forEach(med => {
                 const displayDate = med.expirationDate ? `${med.expirationDate.split('-')[1]}/${med.expirationDate.split('-')[0]}` : 'PENDENTE';
-                let expClass = 'bg-white', textCol = 'text-gray-700';
+                let expClass = 'bg-white', textCol = 'text-black font-bold'; // Alterado para PRETO e NEGRITO
+                
                 if (med.expirationDate) {
                     const diff = monthDiff(med.expirationDate, now);
-                    if (diff <= 0) { expClass = 'bg-red-100'; textCol = 'text-red-800 font-semibold'; }
-                    else if (diff === 1) { expClass = 'bg-yellow-200'; textCol = 'text-yellow-900 font-bold'; }
-                    else if (diff === 2) { expClass = 'bg-amber-200'; textCol = 'text-amber-900 font-semibold'; }
-                    else if (diff === 3) { expClass = 'bg-green-100'; textCol = 'text-green-800 font-semibold'; }
+                    if (diff <= 0) { expClass = 'bg-red-100'; }
+                    else if (diff === 1) { expClass = 'bg-yellow-200'; }
+                    else if (diff === 2) { expClass = 'bg-amber-200'; }
+                    else if (diff === 3) { expClass = 'bg-green-100'; }
                 }
+                
                 const row = document.createElement('tr');
                 row.className = `hover:bg-gray-50 ${expClass} border-l-4 border-r-4`;
                 row.innerHTML = `
-                    <td class="px-2 py-1 text-xs ${textCol} hidden sm:table-cell">${med.barcode}</td>
-                    <td class="px-2 py-1 text-xs ${textCol}">${med.internalCode}</td>
-                    <td class="px-2 py-1 text-xs font-medium ${textCol}">${med.description}</td>
-                    <td class="px-2 py-1 text-xs ${textCol} hidden sm:table-cell">${med.laboratory}</td>
-                    <td class="px-2 py-1 text-xs ${textCol}">${displayDate}</td>
-                    <td class="px-2 py-1 text-xs font-bold">${med.quantity}</td>
-                    <td class="px-2 py-1 text-right text-xs no-print">
-                        <button onclick="loadForEdit('${med.id}')" class="text-blue-600 mr-2">Edit</button>
-                        <button onclick="deleteMedication('${med.id}')" class="text-red-600">Exc</button>
+                    <td class="px-2 py-2 text-xs ${textCol} hidden sm:table-cell">${med.barcode}</td>
+                    <td class="px-2 py-2 text-xs ${textCol}">${med.internalCode}</td>
+                    <td class="px-2 py-2 text-xs ${textCol}">${med.description}</td>
+                    <td class="px-2 py-2 text-xs ${textCol} hidden sm:table-cell">${med.laboratory}</td>
+                    <td class="px-2 py-2 text-xs ${textCol}">${displayDate}</td>
+                    <td class="px-2 py-2 text-xs ${textCol}">${med.quantity}</td>
+                    <td class="px-2 py-2 text-right text-xs no-print">
+                        <button onclick="loadForEdit('${med.id}')" class="text-blue-600 mr-2 font-bold">Edit</button>
+                        <button onclick="deleteMedication('${med.id}')" class="text-red-600 font-bold">Exc</button>
                     </td>`;
                 listContainer.appendChild(row);
             });
