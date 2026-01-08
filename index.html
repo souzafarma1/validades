@@ -14,26 +14,23 @@
         .message-box { position: fixed; top: 20px; right: 20px; padding: 1rem; border-radius: 0.5rem; z-index: 1000; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: opacity 0.3s ease; }
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 50; backdrop-filter: blur(2px); }
         .modal-content { background-color: white; padding: 2rem; border-radius: 1rem; width: 95%; max-width: 550px; max-height: 90vh; overflow-y: auto; position: relative; }
-        .logo-img { max-width: 220px; height: auto; margin: 0 auto 1.5rem; display: block; border-radius: 0.5rem; }
+        .logo-img { max-width: 200px; height: auto; margin: 0 auto 1.5rem; display: block; border-radius: 0.5rem; }
         #reader { width: 100% !important; border: none !important; border-radius: 0.5rem; overflow: hidden; background: #000; }
         #reader__dashboard { display: none !important; }
         
-        /* ESTILO DA TABELA PADRONIZADO (TEXTO PRETO) */
-        .table-header-text { font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 8px; border-bottom: 2px solid #e5e7eb; }
-        .standard-text { color: #000000; font-weight: 600; text-transform: uppercase; line-height: 1.2; font-size: 13px; }
-        .barcode-text { color: #000000; font-size: 12px; font-family: sans-serif; }
+        /* ESTILO DA TABELA (TEXTO PRETO PADRONIZADO) */
+        .table-header-text { font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #f3f4f6; padding: 12px 8px; }
+        .standard-text { color: #000000 !important; font-weight: 600; text-transform: uppercase; line-height: 1.2; font-size: 13px; }
+        .barcode-text { color: #000000 !important; font-size: 12px; font-family: sans-serif; }
         .action-link { font-weight: 700; font-size: 12px; cursor: pointer; white-space: nowrap; }
         .action-link:hover { text-decoration: underline; }
 
         /* Scrollbar na tela para não ficar gigante */
         .scroll-container { max-height: 65vh; overflow-y: auto; overflow-x: auto; -webkit-overflow-scrolling: touch; }
         
-        /* CONFIGURAÇÕES DE IMPRESSÃO (PDF/PAPEL) */
+        /* CONFIGURAÇÕES DE IMPRESSÃO (PDF PAISAGEM SEM CORTES) */
         @media print {
-            @page { 
-                size: landscape; 
-                margin: 1cm; 
-            }
+            @page { size: landscape; margin: 0.5cm; }
             .no-print { display: none !important; }
             body { background: white !important; padding: 0 !important; }
             .container { max-width: 100% !important; width: 100% !important; padding: 0 !important; margin: 0 !important; }
@@ -41,15 +38,12 @@
             table { width: 100% !important; border-collapse: collapse !important; table-layout: auto !important; }
             th, td { 
                 border: 1px solid #ddd !important; 
-                padding: 8px !important; 
+                padding: 6px !important; 
                 font-size: 9pt !important; 
                 color: black !important;
                 white-space: normal !important; /* Permite quebra de linha para não cortar nomes */
                 word-wrap: break-word !important;
             }
-            th { background-color: #f9fafb !important; -webkit-print-color-adjust: exact; }
-            tr { page-break-inside: avoid; }
-            /* Garante que o fundo colorido da validade apareça no PDF */
             .bg-red-50 { background-color: #fef2f2 !important; -webkit-print-color-adjust: exact; }
             .bg-yellow-50 { background-color: #fefce8 !important; -webkit-print-color-adjust: exact; }
             .bg-orange-50 { background-color: #fff7ed !important; -webkit-print-color-adjust: exact; }
@@ -60,9 +54,9 @@
 <body class="bg-gray-100 min-h-screen">
 
     <div id="app" class="container">
-        <header class="py-6 mb-8 bg-white shadow-md rounded-lg no-print text-center">
+        <header class="py-6 mb-8 bg-white shadow-md rounded-lg no-print text-center border-b-4 border-red-600">
             <h1 class="text-3xl font-bold text-red-700">Souza Farma - Controle de Validade</h1>
-            <p id="db-status" class="text-gray-400 text-[10px] mt-1 font-black uppercase tracking-widest animate-pulse">A carregar dados...</p>
+            <p id="db-status" class="text-center text-gray-400 text-[10px] mt-1 font-black uppercase tracking-widest animate-pulse">A ligar ao servidor...</p>
         </header>
 
         <div id="message-container" class="fixed top-4 right-4 space-y-2 no-print"></div>
@@ -73,31 +67,31 @@
                 <div class="bg-white p-6 rounded-xl shadow-xl border border-gray-200 text-center">
                     <img src="https://raw.githubusercontent.com/souzaimportadosslz-bot/controledevalidades/main/souza_farma_logo.png" 
                          alt="Souza Farma" class="logo-img"
-                         onerror="this.onerror=null; this.src='https://placehold.co/180x60/cc0000/ffffff?text=Souza+Farma';">
+                         onerror="this.onerror=null; this.src='https://placehold.co/200x80/cc0000/ffffff?text=Souza+Farma';">
                     
                     <div class="flex flex-col space-y-3">
-                        <button onclick="window.openCadastroModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition active:scale-95 text-sm">
-                            + Cadastrar Novo Produto
+                        <button onclick="window.openCadastroModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow transition active:scale-95">
+                            + Novo Produto
                         </button>
-                        <button onclick="window.openImportModal()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition active:scale-95 text-xs">
-                            Importação Inicial
+                        <button onclick="window.openImportModal()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg shadow transition active:scale-95 text-xs">
+                            Importar Produtos (Inicial)
                         </button>
-                        <button onclick="window.openImportLotesModal()" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition active:scale-95 text-xs">
+                        <button onclick="window.openImportLotesModal()" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-4 rounded-lg shadow transition active:scale-95 text-xs">
                             Atualizar Lotes (Excel)
                         </button>
-                        <button onclick="window.confirmDeleteAll()" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition active:scale-95 text-xs">
-                            ❌ Excluir TODO o Inventário
+                        <button onclick="window.confirmDeleteAll()" class="w-full text-red-500 font-bold py-2 text-[10px] uppercase tracking-tighter hover:bg-red-50 rounded-lg">
+                            ❌ Apagar Inventário
                         </button>
                     </div>
                 </div>
 
                 <div class="bg-blue-50 p-5 rounded-xl border border-blue-100 shadow-inner text-center">
-                    <h3 class="text-blue-700 uppercase text-[10px] font-black mb-2">Lançamento de Lote</h3>
+                    <h3 class="text-blue-700 uppercase text-[11px] font-black mb-2 tracking-widest">Lançamento de Lote</h3>
                     <div class="flex space-x-2">
                         <input type="text" id="quick-search-input" class="flex-grow p-2 border border-blue-300 rounded-lg focus:ring-blue-500 text-sm shadow-sm"
                             placeholder="Ler código..." onchange="window.quickLookup(this.value)">
                         <button onclick="window.openScannerModal('LOTE')" class="bg-blue-500 text-white p-2 rounded-lg shadow transition active:scale-90">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
                         </button>
                     </div>
                 </div>
@@ -107,9 +101,9 @@
             <div class="lg:w-3/4">
                 <div class="bg-white p-6 rounded-xl shadow-xl border border-gray-200">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0 no-print">
-                        <h2 class="text-2xl font-bold text-blue-800 tracking-tight">Produtos em Inventário</h2>
+                        <h2 class="text-2xl font-bold text-blue-800">Produtos em Stock</h2>
                         <div class="flex space-x-2">
-                            <button onclick="window.exportToCsv()" class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold text-sm shadow hover:bg-green-700 transition">Exportar Excel</button>
+                            <button onclick="window.exportToCsv()" class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold text-sm shadow hover:bg-green-700 transition">Excel</button>
                             <button onclick="window.printFilteredList()" class="bg-gray-700 text-white px-4 py-2 rounded-lg font-bold text-sm shadow hover:bg-gray-800 transition">Imprimir PDF</button>
                         </div>
                     </div>
@@ -117,37 +111,37 @@
                     <div class="mb-4 no-print space-y-4">
                         <div class="flex space-x-2">
                             <input type="text" id="search-input" class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-green-500 text-sm bg-gray-50 shadow-inner"
-                                placeholder="Filtrar por nome, código ou barras..." onkeyup="window.applyFilters()">
-                            <button onclick="window.openScannerModal('BUSCA')" class="bg-green-500 text-white p-3 rounded-lg shadow hover:bg-green-600 active:scale-90 transition" title="Escanear Filtro">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                placeholder="Filtrar por nome ou código..." onkeyup="window.applyFilters()">
+                            <button onclick="window.openScannerModal('BUSCA')" class="bg-green-500 text-white p-3 rounded-lg shadow active:scale-90" title="Scanner de Busca">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                             </button>
-                            <button onclick="window.clearSearch()" class="bg-gray-200 text-gray-700 px-4 rounded-lg font-black text-[10px] uppercase hover:bg-gray-300 transition">Limpar</button>
+                            <button onclick="window.clearSearch()" class="bg-gray-100 text-gray-500 px-4 rounded-lg font-black text-[10px] uppercase">Limpar</button>
                         </div>
 
                         <!-- Legenda -->
-                        <div class="flex flex-wrap gap-4 text-xs font-bold text-gray-500 bg-gray-50 p-4 rounded-lg border border-gray-100">
-                            <span class="flex items-center"><span class="w-3.5 h-3.5 rounded-full bg-red-500 mr-2 border-2 border-red-700 shadow-sm"></span> Vencido / Mês Atual</span>
-                            <span class="flex items-center"><span class="w-3.5 h-3.5 rounded-full bg-yellow-400 mr-2 border-2 border-yellow-600 shadow-sm"></span> 1 Mês</span>
-                            <span class="flex items-center"><span class="w-3.5 h-3.5 rounded-full bg-orange-500 mr-2 border-2 border-orange-700 shadow-sm"></span> 2 Meses</span>
-                            <span class="flex items-center"><span class="w-3.5 h-3.5 rounded-full bg-green-400 mr-2 border-2 border-green-700 shadow-sm"></span> 3 Meses</span>
+                        <div class="flex flex-wrap gap-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest py-1">
+                            <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-red-500 mr-2 border border-red-700"></span> Vencido</span>
+                            <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-yellow-400 mr-2 border border-yellow-600"></span> 1 Mês</span>
+                            <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-orange-500 mr-2 border border-orange-700"></span> 2 Meses</span>
+                            <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-green-400 mr-2 border border-green-700"></span> 3 Meses</span>
                         </div>
                     </div>
 
-                    <div class="scroll-container border border-gray-200 rounded-xl shadow-sm">
+                    <div class="scroll-container border border-gray-100 rounded-xl shadow-sm">
                         <table id="main-table" class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50 sticky top-0 z-10">
                                 <tr>
-                                    <th class="px-4 py-3 text-left table-header-text">Cód. Barras</th>
-                                    <th class="px-4 py-3 text-left table-header-text">Interno</th>
-                                    <th class="px-4 py-3 text-left table-header-text">Descrição</th>
-                                    <th class="px-4 py-3 text-left table-header-text hidden sm:table-cell">Lab</th>
-                                    <th class="px-4 py-3 text-left table-header-text">Validade</th>
-                                    <th class="px-4 py-3 text-center table-header-text">Qtd</th>
-                                    <th class="px-4 py-3 text-right table-header-text no-print">Ações</th>
+                                    <th class="table-header-text text-left hidden sm:table-cell">Barras</th>
+                                    <th class="table-header-text text-left">Interno</th>
+                                    <th class="table-header-text text-left">Descrição</th>
+                                    <th class="table-header-text text-left hidden sm:table-cell">Lab</th>
+                                    <th class="table-header-text text-left">Validade</th>
+                                    <th class="table-header-text text-center">Qtd</th>
+                                    <th class="table-header-text text-right no-print">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody id="medication-list" class="bg-white divide-y divide-gray-200 text-sm">
-                                <tr><td colspan="7" class="p-20 text-center text-gray-400 italic font-semibold animate-pulse">Sincronizando dados com o servidor...</td></tr>
+                            <tbody id="medication-list" class="bg-white divide-y divide-gray-100">
+                                <tr><td colspan="7" class="p-20 text-center text-gray-400 italic font-semibold animate-pulse">A ler dados da base de dados...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -160,14 +154,14 @@
     <div id="medication-modal" class="modal-overlay hidden no-print">
         <div class="modal-content shadow-2xl">
             <button class="absolute top-4 right-4 text-gray-400 text-2xl hover:text-gray-800" onclick="window.closeModal()">&times;</button>
-            <h2 class="text-2xl font-bold mb-6 text-blue-700" id="form-title">Dados do Produto</h2>
+            <h2 class="text-xl font-bold mb-6 text-blue-700" id="form-title">Dados do Produto</h2>
             <form id="medication-form" class="space-y-4">
                 <input type="hidden" id="doc-id">
                 <div class="grid grid-cols-2 gap-4">
-                    <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Cód. Barras</label><input type="text" id="barcode" required class="w-full p-3 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 border-none shadow-inner"></div>
-                    <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Cód. Interno</label><input type="text" id="internalCode" required class="w-full p-3 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 border-none shadow-inner"></div>
+                    <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Cód. Barras</label><input type="text" id="barcode" required class="w-full p-3 bg-gray-50 border rounded-xl text-sm border-none shadow-inner focus:ring-2 focus:ring-blue-500"></div>
+                    <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Cód. Interno</label><input type="text" id="internalCode" required class="w-full p-3 bg-gray-50 border rounded-xl text-sm border-none shadow-inner focus:ring-2 focus:ring-blue-500"></div>
                 </div>
-                <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Descrição</label><input type="text" id="description" required class="w-full p-3 bg-gray-50 border rounded-xl text-sm border-none shadow-inner focus:ring-2 focus:ring-blue-500"></div>
+                <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Nome do Produto</label><input type="text" id="description" required class="w-full p-3 bg-gray-50 border rounded-xl text-sm border-none shadow-inner focus:ring-2 focus:ring-blue-500"></div>
                 <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Laboratório</label><input type="text" id="laboratory" required class="w-full p-3 bg-gray-50 border rounded-xl text-sm border-none shadow-inner focus:ring-2 focus:ring-blue-500"></div>
                 <div class="grid grid-cols-2 gap-4">
                     <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Qtd</label><input type="number" id="quantity" required class="w-full p-3 bg-gray-50 border rounded-xl text-sm border-none shadow-inner focus:ring-2 focus:ring-blue-500"></div>
@@ -178,13 +172,13 @@
         </div>
     </div>
 
-    <!-- Modais de Importação -->
+    <!-- Modais Importação -->
     <div id="import-modal" class="modal-overlay hidden no-print">
         <div class="modal-content shadow-2xl">
             <button class="absolute top-4 right-4 text-gray-400 text-2xl" onclick="window.closeImportModal()">&times;</button>
-            <h2 class="text-xl font-bold mb-4 text-purple-700 uppercase tracking-tight">Importação de Produtos</h2>
+            <h2 class="text-xl font-bold mb-4 text-purple-700 uppercase tracking-tight">Importação Inicial</h2>
             <input type="file" id="bulk-file-input" accept=".csv, .tsv" class="w-full p-3 border rounded-xl bg-gray-50 mb-4 text-sm">
-            <select id="delimiter-select" class="w-full p-3 border-none bg-gray-50 rounded-xl mb-6 text-sm shadow-inner"><option value=";">Ponto e Vírgula (;)</option><option value=",">Vírgula (,)</option><option value="\t">Tabulação (TSV)</option></select>
+            <select id="delimiter-select" class="w-full p-2 border rounded-lg bg-gray-50 text-sm mb-4"><option value=";">Ponto e Vírgula (;)</option><option value=",">Vírgula (,)</option></select>
             <button onclick="window.handleBulkImport()" class="w-full bg-purple-600 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition">Importar Planilha</button>
         </div>
     </div>
@@ -194,7 +188,7 @@
             <button class="absolute top-4 right-4 text-gray-400 text-2xl" onclick="window.closeImportLotesModal()">&times;</button>
             <h2 class="text-xl font-bold mb-4 text-orange-700 uppercase tracking-tight">Atualizar Lotes (Excel)</h2>
             <input type="file" id="bulk-lotes-file-input" accept=".csv, .tsv" class="w-full p-3 border rounded-xl bg-gray-50 mb-4 text-sm">
-            <select id="delimiter-lotes-select" class="w-full p-3 border-none bg-gray-50 rounded-xl mb-6 text-sm shadow-inner"><option value=";">Ponto e Vírgula (;)</option><option value=",">Vírgula (,)</option></select>
+            <select id="delimiter-lotes-select" class="w-full p-2 border rounded-lg bg-gray-50 text-sm mb-4"><option value=";">Ponto e Vírgula (;)</option><option value=",">Vírgula (,)</option></select>
             <button id="import-lotes-button" onclick="window.handleBulkLotesImport()" class="w-full bg-orange-600 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition">Atualizar Inventário</button>
         </div>
     </div>
@@ -203,7 +197,7 @@
     <div id="scanner-modal" class="modal-overlay hidden no-print">
         <div class="modal-content shadow-2xl p-0 overflow-hidden">
             <div class="p-4 flex justify-between items-center bg-white border-b">
-                <h2 class="font-black text-gray-800 uppercase text-sm tracking-tighter">Scanner Souza Farma</h2>
+                <h2 class="font-black text-gray-800 uppercase text-xs">Scanner Souza Farma</h2>
                 <button class="text-gray-400 text-3xl font-light hover:text-red-600 transition" onclick="window.closeScannerModal()">&times;</button>
             </div>
             <div id="reader"></div>
@@ -235,7 +229,7 @@
 
                 onAuthStateChanged(auth, u => { 
                     if(u) { 
-                        document.getElementById('db-status').textContent = "✅ Base Conectada";
+                        document.getElementById('db-status').textContent = "✅ Sistema Ligado";
                         document.getElementById('db-status').classList.replace('text-gray-400', 'text-green-600');
                         startSync(); 
                     } 
@@ -250,10 +244,12 @@
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), snap => {
                 allMedications = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 window.applyFilters();
+            }, err => {
+                window.showMessage("Erro ao ler dados do servidor.", "error");
             });
         }
 
-        // --- FUNÇÕES GLOBAIS ---
+        // --- EXPOSIÇÃO GLOBAL ---
         window.openCadastroModal = () => document.getElementById('medication-modal').classList.remove('hidden');
         window.closeModal = () => {
             document.getElementById('medication-modal').classList.add('hidden');
@@ -268,8 +264,8 @@
         window.closeImportLotesModal = () => document.getElementById('import-lotes-modal').classList.add('hidden');
 
         window.applyFilters = () => {
-            const searchInputEl = document.getElementById('search-input');
-            const term = (searchInputEl ? searchInputEl.value : "").toLowerCase().trim();
+            const inp = document.getElementById('search-input');
+            const term = (inp && inp.value) ? inp.value.toLowerCase().trim() : "";
             let filtered = allMedications;
             if (term) filtered = filtered.filter(m => (m.barcode + (m.internalCode||'') + m.description).toLowerCase().includes(term));
             filtered.sort((a, b) => (a.expirationDate || '9999-12').localeCompare(b.expirationDate || '9999-12'));
@@ -284,7 +280,10 @@
 
         function renderList(meds) {
             const list = document.getElementById('medication-list');
-            if (!meds.length) { list.innerHTML = '<tr><td colspan="7" class="p-20 text-center text-gray-400 font-bold uppercase text-xs">Inventário Vazio</td></tr>'; return; }
+            if (!meds.length) { 
+                list.innerHTML = '<tr><td colspan="7" class="p-20 text-center text-gray-400 font-bold uppercase text-xs">Inventário Vazio</td></tr>';
+                return; 
+            }
             list.innerHTML = '';
             const curMonth = new Date().toISOString().slice(0, 7);
             
@@ -299,14 +298,14 @@
                 const row = document.createElement('tr');
                 row.className = `hover:bg-gray-100 transition-colors border-b border-gray-100 ${bg}`;
                 row.innerHTML = `
-                    <td class="px-4 py-4 barcode-text">${m.barcode}</td>
+                    <td class="px-4 py-4 barcode-text hidden sm:table-cell">${m.barcode}</td>
                     <td class="px-4 py-4 barcode-text font-bold text-xs">${m.internalCode}</td>
                     <td class="px-4 py-4 standard-text">${m.description}</td>
                     <td class="px-4 py-4 barcode-text font-bold hidden sm:table-cell text-xs">${m.laboratory}</td>
                     <td class="px-4 py-4 barcode-text font-bold text-xs">${m.expirationDate ? m.expirationDate.split('-').reverse().join('/') : '---'}</td>
                     <td class="px-4 py-4 text-center barcode-text font-black text-sm">${m.quantity}</td>
                     <td class="px-4 py-4 text-right no-print">
-                        <div class="flex items-center justify-end space-x-3">
+                        <div class="flex items-center justify-end space-x-4">
                             <span onclick="window.loadForEdit('${m.id}')" class="action-link text-blue-600">Editar</span>
                             <span onclick="window.deleteMedication('${m.id}')" class="action-link text-red-600">Excluir</span>
                         </div>
@@ -356,15 +355,14 @@
         };
 
         window.quickLookup = (query) => {
-            const q = query.trim();
-            const found = allMedications.find(m => m.barcode === q || m.internalCode === q);
+            const found = allMedications.find(m => m.barcode === query.trim() || m.internalCode === query.trim());
             if (found) {
                 window.openCadastroModal();
                 document.getElementById('barcode').value = found.barcode;
                 document.getElementById('internalCode').value = found.internalCode;
                 document.getElementById('description').value = found.description;
                 document.getElementById('laboratory').value = found.laboratory;
-                document.getElementById('form-title').textContent = "Adicionar Novo Lote";
+                document.getElementById('form-title').textContent = "Adicionar Lote";
                 document.getElementById('barcode').disabled = true;
             } else { window.showMessage("Produto não localizado.", "error"); }
         };
@@ -395,6 +393,7 @@
             }
         };
 
+        // LÓGICA DE IMPORTAÇÃO (Excel/Lotes)
         window.handleBulkLotesImport = async function() {
             const fileInput = document.getElementById('bulk-lotes-file-input');
             const file = fileInput.files[0];
@@ -427,7 +426,7 @@
                         await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), data);
                     }
                 }
-                window.showMessage("Atualização concluída!");
+                window.showMessage("Importação concluída!");
                 window.closeImportLotesModal();
             };
             reader.readAsText(file);
@@ -448,7 +447,7 @@
                         await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), data);
                     }
                 }
-                window.showMessage("Importação inicial concluída!");
+                window.showMessage("Importação concluída!");
                 window.closeImportModal();
             };
             reader.readAsText(file);
