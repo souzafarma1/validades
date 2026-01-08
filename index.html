@@ -18,11 +18,13 @@
         #reader { width: 100% !important; border: none !important; border-radius: 0.5rem; overflow: hidden; background: #000; }
         #reader__dashboard { display: none !important; }
         
-        /* ESTILO DA TABELA - FIEL À FOTO 1 E AO SEU PEDIDO */
-        .table-header-text { font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #f3f4f6; padding: 12px 8px; }
-        .desc-text { color: #78350f !important; font-weight: 600; text-transform: uppercase; line-height: 1.2; font-size: 14px; }
-        .barcode-text { color: #9ca3af !important; font-size: 13px; font-family: sans-serif; }
-        .black-text { color: #000000 !important; font-weight: 700; font-size: 13px; }
+        /* ESTILO DA TABELA - TEXTO 100% PRETO */
+        .table-header-text { font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #f3f4f6; padding: 12px 8px; }
+        
+        /* Classe para garantir que todo o conteúdo da linha seja preto */
+        .row-text-black { color: #000000 !important; font-weight: 700; font-size: 13px; text-transform: uppercase; line-height: 1.2; }
+        .barcode-cell { color: #000000 !important; font-size: 12px; font-family: sans-serif; font-weight: 400; }
+        
         .action-link { font-weight: 700; font-size: 12px; cursor: pointer; white-space: nowrap; }
         .action-link:hover { text-decoration: underline; }
 
@@ -57,7 +59,7 @@
     <div id="app" class="container">
         <header class="py-6 mb-8 bg-white shadow-md rounded-lg no-print text-center border-b-4 border-red-600">
             <h1 class="text-3xl font-bold text-red-700">Souza Farma - Controle de Validade</h1>
-            <p id="db-status" class="text-center text-gray-400 text-[10px] mt-1 font-black uppercase tracking-widest animate-pulse">A carregar inventário...</p>
+            <p id="db-status" class="text-center text-gray-400 text-[10px] mt-1 font-black uppercase tracking-widest animate-pulse">Sincronizando Sistema...</p>
         </header>
 
         <div id="message-container" class="fixed top-4 right-4 space-y-2 no-print"></div>
@@ -119,7 +121,7 @@
                             <button onclick="window.clearSearch()" class="bg-gray-200 text-gray-700 px-4 rounded-lg font-black text-[10px] uppercase hover:bg-gray-300 transition">Limpar</button>
                         </div>
 
-                        <!-- Legenda de Cores -->
+                        <!-- Legenda -->
                         <div class="flex flex-wrap gap-4 text-xs font-bold text-gray-500 bg-gray-50 p-4 rounded-lg border border-gray-100">
                             <span class="flex items-center"><span class="w-3.5 h-3.5 rounded-full bg-red-500 mr-2 border-2 border-red-700 shadow-sm"></span> Vencido / Mês Atual</span>
                             <span class="flex items-center"><span class="w-3.5 h-3.5 rounded-full bg-yellow-400 mr-2 border-2 border-yellow-600 shadow-sm"></span> 1 Mês</span>
@@ -132,7 +134,7 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50 sticky top-0 z-10">
                                 <tr>
-                                    <th class="px-4 py-3 text-left table-header-text hidden sm:table-cell">Barras</th>
+                                    <th class="px-4 py-3 text-left table-header-text hidden sm:table-cell">Cód. Barras</th>
                                     <th class="px-4 py-3 text-left table-header-text">Interno</th>
                                     <th class="px-4 py-3 text-left table-header-text">Descrição</th>
                                     <th class="px-4 py-3 text-left table-header-text hidden sm:table-cell">Lab</th>
@@ -142,7 +144,7 @@
                                 </tr>
                             </thead>
                             <tbody id="medication-list" class="bg-white divide-y divide-gray-100">
-                                <tr><td colspan="7" class="p-20 text-center text-gray-400 italic font-semibold animate-pulse">Sincronizando dados da nuvem...</td></tr>
+                                <tr><td colspan="7" class="p-20 text-center text-gray-400 italic font-semibold animate-pulse">Sincronizando dados...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -162,7 +164,7 @@
                     <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Cód. Barras</label><input type="text" id="barcode" required class="w-full p-3 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 border-none shadow-inner"></div>
                     <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Cód. Interno</label><input type="text" id="internalCode" required class="w-full p-3 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 border-none shadow-inner"></div>
                 </div>
-                <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Nome do Item</label><input type="text" id="description" required class="w-full p-3 bg-gray-50 border rounded-xl text-sm border-none shadow-inner focus:ring-2 focus:ring-blue-500"></div>
+                <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Descrição</label><input type="text" id="description" required class="w-full p-3 bg-gray-50 border rounded-xl text-sm border-none shadow-inner focus:ring-2 focus:ring-blue-500"></div>
                 <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Laboratório</label><input type="text" id="laboratory" required class="w-full p-3 bg-gray-50 border rounded-xl text-sm border-none shadow-inner focus:ring-2 focus:ring-blue-500"></div>
                 <div class="grid grid-cols-2 gap-4">
                     <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Quantidade</label><input type="number" id="quantity" required class="w-full p-3 bg-gray-50 border rounded-xl text-sm border-none shadow-inner focus:ring-2 focus:ring-blue-500"></div>
@@ -179,7 +181,6 @@
             <button class="absolute top-4 right-4 text-gray-400 text-2xl" onclick="window.closeImportModal()">&times;</button>
             <h2 class="text-xl font-bold mb-4 text-purple-700 uppercase tracking-tight">Importação Inicial</h2>
             <input type="file" id="bulk-file-input" accept=".csv, .tsv" class="w-full p-3 border rounded-xl bg-gray-50 mb-4 text-sm">
-            <label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Separador:</label>
             <select id="delimiter-select" class="w-full p-3 border-none bg-gray-50 rounded-xl mb-6 text-sm shadow-inner"><option value=";">Ponto e Vírgula (;)</option><option value=",">Vírgula (,)</option><option value="\t">Tabulação (TSV)</option></select>
             <button onclick="window.handleBulkImport()" class="w-full bg-purple-600 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition">Processar Planilha</button>
         </div>
@@ -190,7 +191,6 @@
             <button class="absolute top-4 right-4 text-gray-400 text-2xl" onclick="window.closeImportLotesModal()">&times;</button>
             <h2 class="text-xl font-bold mb-4 text-orange-700 uppercase tracking-tight">Atualizar Lotes (Excel)</h2>
             <input type="file" id="bulk-lotes-file-input" accept=".csv, .tsv" class="w-full p-3 border rounded-xl bg-gray-50 mb-4 text-sm">
-            <label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Separador:</label>
             <select id="delimiter-lotes-select" class="w-full p-2 border rounded-lg bg-gray-50 text-sm mb-4"><option value=";">Ponto e Vírgula (;)</option><option value=",">Vírgula (,)</option></select>
             <button id="import-lotes-button" onclick="window.handleBulkLotesImport()" class="w-full bg-orange-600 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition">Atualizar Inventário</button>
         </div>
@@ -303,12 +303,12 @@
                 const row = document.createElement('tr');
                 row.className = `hover:bg-gray-100 transition-colors border-b border-gray-100 ${bg}`;
                 row.innerHTML = `
-                    <td class="px-4 py-4 barcode-text hidden sm:table-cell">${m.barcode}</td>
-                    <td class="px-4 py-4 black-text text-xs">${m.internalCode}</td>
-                    <td class="px-4 py-4 desc-text">${m.description}</td>
-                    <td class="px-4 py-4 black-text hidden sm:table-cell text-xs">${m.laboratory}</td>
-                    <td class="px-4 py-4 black-text text-xs">${m.expirationDate ? m.expirationDate.split('-').reverse().join('/') : '---'}</td>
-                    <td class="px-4 py-4 text-center black-text text-sm">${m.quantity}</td>
+                    <td class="px-4 py-4 barcode-cell hidden sm:table-cell">${m.barcode}</td>
+                    <td class="px-4 py-4 row-text-black text-xs">${m.internalCode}</td>
+                    <td class="px-4 py-4 row-text-black">${m.description}</td>
+                    <td class="px-4 py-4 row-text-black hidden sm:table-cell text-xs">${m.laboratory}</td>
+                    <td class="px-4 py-4 row-text-black text-xs">${m.expirationDate ? m.expirationDate.split('-').reverse().join('/') : '---'}</td>
+                    <td class="px-4 py-4 text-center row-text-black text-sm">${m.quantity}</td>
                     <td class="px-4 py-4 text-right no-print">
                         <div class="flex items-center justify-end space-x-4">
                             <span onclick="window.loadForEdit('${m.id}')" class="action-link text-blue-600">Editar</span>
@@ -367,7 +367,7 @@
                 document.getElementById('internalCode').value = found.internalCode;
                 document.getElementById('description').value = found.description;
                 document.getElementById('laboratory').value = found.laboratory;
-                document.getElementById('form-title').textContent = "Adicionar Lote";
+                document.getElementById('form-title').textContent = "Adicionar Novo Lote";
                 document.getElementById('barcode').disabled = true;
             } else { window.showMessage("Produto não localizado.", "error"); }
         };
@@ -388,7 +388,7 @@
             }
         };
 
-        window.deleteMedication = async (id) => { if(confirm('Apagar este lote permanentemente?')) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id)); };
+        window.deleteMedication = async (id) => { if(confirm('Apagar este lote?')) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id)); };
 
         window.confirmDeleteAll = async () => {
             if(confirm('🛑 ATENÇÃO: Deseja apagar TODO o inventário?')) {
@@ -451,7 +451,7 @@
                         await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), data);
                     }
                 }
-                window.showMessage("Concluído!");
+                window.showMessage("Importação inicial concluída!");
                 window.closeImportModal();
             };
             reader.readAsText(file);
