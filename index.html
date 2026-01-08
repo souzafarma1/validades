@@ -18,11 +18,11 @@
         #reader { width: 100% !important; border: none !important; border-radius: 0.5rem; overflow: hidden; background: #000; }
         #reader__dashboard { display: none !important; }
         
-        /* ESTILO DA TABELA (Fiel à Foto 1) */
+        /* ESTILO FIEL À FOTO 1 */
         .table-header-text { font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #f3f4f6; }
         .desc-text { color: #78350f; font-weight: 600; text-transform: uppercase; line-height: 1.2; font-size: 14px; }
         .barcode-text { color: #9ca3af; font-size: 13px; font-family: sans-serif; }
-        .action-link { font-weight: 700; font-size: 13px; cursor: pointer; display: block; text-align: right; line-height: 1.5; }
+        .action-link { font-weight: 700; font-size: 13px; cursor: pointer; white-space: nowrap; }
         .action-link:hover { text-decoration: underline; }
         
         @media print { .no-print { display: none !important; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 8px; font-size: 10pt; } }
@@ -33,13 +33,13 @@
     <div id="app" class="container">
         <header class="py-6 mb-8 bg-white shadow-md rounded-lg no-print text-center">
             <h1 class="text-3xl font-bold text-red-700">Souza Farma - Controle de Validade</h1>
-            <p id="db-status" class="text-gray-400 text-[10px] mt-1 font-black uppercase tracking-widest animate-pulse">Iniciando ligação com a base...</p>
+            <p id="db-status" class="text-gray-400 text-[10px] mt-1 font-black uppercase tracking-widest">A carregar inventário...</p>
         </header>
 
         <div id="message-container" class="fixed top-4 right-4 space-y-2 no-print"></div>
 
         <div class="lg:flex lg:space-x-8">
-            <!-- Coluna Lateral -->
+            <!-- Barra Lateral -->
             <div class="lg:w-1/4 mb-8 lg:mb-0 no-print space-y-4">
                 <div class="bg-white p-6 rounded-xl shadow-xl border border-gray-200 text-center">
                     <img src="https://raw.githubusercontent.com/souzaimportadosslz-bot/controledevalidades/main/souza_farma_logo.png" 
@@ -118,7 +118,7 @@
                                 </tr>
                             </thead>
                             <tbody id="medication-list" class="bg-white divide-y divide-gray-200 text-sm">
-                                <tr><td colspan="7" class="p-20 text-center text-gray-400 italic font-semibold animate-pulse">Carregando dados da nuvem...</td></tr>
+                                <tr><td colspan="7" class="p-20 text-center text-gray-400 italic font-semibold animate-pulse">Sincronizando dados...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -131,7 +131,7 @@
     <div id="medication-modal" class="modal-overlay hidden no-print">
         <div class="modal-content shadow-2xl">
             <button class="absolute top-4 right-4 text-gray-400 text-2xl hover:text-gray-800" onclick="window.closeModal()">&times;</button>
-            <h2 class="text-2xl font-bold mb-6 text-blue-700" id="form-title">Cadastro de Lote</h2>
+            <h2 class="text-2xl font-bold mb-6 text-blue-700" id="form-title">Dados do Produto</h2>
             <form id="medication-form" class="space-y-4">
                 <input type="hidden" id="doc-id">
                 <div class="grid grid-cols-2 gap-4">
@@ -153,14 +153,11 @@
     <div id="import-modal" class="modal-overlay hidden no-print">
         <div class="modal-content shadow-2xl">
             <button class="absolute top-4 right-4 text-gray-400 text-2xl" onclick="window.closeImportModal()">&times;</button>
-            <h2 class="text-xl font-bold mb-4 text-purple-700 uppercase tracking-tight">Importação de Produtos</h2>
-            <div class="bg-purple-50 p-4 rounded-lg border border-purple-100 mb-4 text-xs text-purple-800 leading-relaxed">
-                Ordem: <b>Barras, Interno, Nome, Lab, Qtd</b> (sem validade).
-            </div>
+            <h2 class="text-xl font-bold mb-4 text-purple-700 uppercase tracking-tight">Importação Inicial</h2>
             <input type="file" id="bulk-file-input" accept=".csv, .tsv" class="w-full p-3 border rounded-xl bg-gray-50 mb-4 text-sm">
-            <label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Delimitador:</label>
+            <label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Separador:</label>
             <select id="delimiter-select" class="w-full p-3 border-none bg-gray-50 rounded-xl mb-6 text-sm shadow-inner"><option value=";">Ponto e Vírgula (;)</option><option value=",">Vírgula (,)</option><option value="\t">Tabulação (TSV)</option></select>
-            <button onclick="window.handleBulkImport()" class="w-full bg-purple-600 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition">Processar Importação</button>
+            <button onclick="window.handleBulkImport()" class="w-full bg-purple-600 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition">Importar Planilha</button>
         </div>
     </div>
 
@@ -186,8 +183,7 @@
             </div>
             <div id="reader"></div>
             <div class="p-6 bg-gray-50 text-center border-t border-gray-100">
-                <p class="text-blue-800 text-sm font-bold uppercase tracking-widest italic">iPhone 7 / 12 (Alta Precisão)</p>
-                <p class="text-gray-400 text-[10px] mt-1 font-bold uppercase tracking-tighter">Foco automático a 15cm-20cm de distância.</p>
+                <p class="text-blue-800 text-sm font-bold uppercase tracking-widest italic">Modo de Alta Precisão (iPhone)</p>
             </div>
         </div>
     </div>
@@ -209,15 +205,13 @@
                 auth = getAuth(app);
                 db = getFirestore(app);
 
-                // Autenticação robusta
                 if (initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
                 else await signInAnonymously(auth);
 
                 onAuthStateChanged(auth, u => { 
                     if(u) { 
-                        document.getElementById('db-status').textContent = "✅ Base Conectada";
+                        document.getElementById('db-status').textContent = "✅ Sistema Conectado";
                         document.getElementById('db-status').classList.replace('text-gray-400', 'text-green-600');
-                        document.getElementById('db-status').classList.remove('animate-pulse');
                         startSync(); 
                     } 
                 });
@@ -231,12 +225,10 @@
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), snap => {
                 allMedications = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 window.applyFilters();
-            }, err => {
-                window.showMessage("Erro ao ler dados: " + err.message, "error");
             });
         }
 
-        // --- FUNÇÕES GLOBAIS ---
+        // --- EXPOSIÇÃO GLOBAL DE FUNÇÕES ---
         window.openCadastroModal = () => document.getElementById('medication-modal').classList.remove('hidden');
         window.closeModal = () => {
             document.getElementById('medication-modal').classList.add('hidden');
@@ -251,8 +243,8 @@
         window.closeImportLotesModal = () => document.getElementById('import-lotes-modal').classList.add('hidden');
 
         window.applyFilters = () => {
-            const searchInputEl = document.getElementById('search-input');
-            const term = (searchInputEl ? searchInputEl.value : "").toLowerCase().trim();
+            const inp = document.getElementById('search-input');
+            const term = (inp ? inp.value : "").toLowerCase().trim();
             let filtered = allMedications;
             if (term) filtered = filtered.filter(m => (m.barcode + (m.internalCode||'') + m.description).toLowerCase().includes(term));
             filtered.sort((a, b) => (a.expirationDate || '9999-12').localeCompare(b.expirationDate || '9999-12'));
@@ -267,7 +259,7 @@
 
         function renderList(meds) {
             const list = document.getElementById('medication-list');
-            if (!meds.length) { list.innerHTML = '<tr><td colspan="7" class="p-20 text-center text-gray-400">Nenhum registro encontrado.</td></tr>'; return; }
+            if (!meds.length) { list.innerHTML = '<tr><td colspan="7" class="p-20 text-center text-gray-400 font-bold uppercase text-xs">Inventário Vazio</td></tr>'; return; }
             list.innerHTML = '';
             const curMonth = new Date().toISOString().slice(0, 7);
             
@@ -289,8 +281,10 @@
                     <td class="px-4 py-4 font-bold text-gray-900">${m.expirationDate ? m.expirationDate.split('-').reverse().join('/') : '---'}</td>
                     <td class="px-4 py-4 text-center font-black text-gray-900">${m.quantity}</td>
                     <td class="px-4 py-4 text-right no-print">
-                        <span onclick="window.loadForEdit('${m.id}')" class="action-link text-blue-600 mb-1">Editar</span>
-                        <span onclick="window.deleteMedication('${m.id}')" class="action-link text-red-600">Excluir</span>
+                        <div class="flex items-center justify-end space-x-4">
+                            <span onclick="window.loadForEdit('${m.id}')" class="action-link text-blue-600">Editar</span>
+                            <span onclick="window.deleteMedication('${m.id}')" class="action-link text-red-600">Excluir</span>
+                        </div>
                     </td>`;
                 list.appendChild(row);
             });
@@ -303,7 +297,7 @@
             return (y1 - y2) * 12 + (month1 - month2);
         }
 
-        // --- SCANNER OTIMIZADO ---
+        // --- SCANNER ---
         window.openScannerModal = function(mode) {
             window.scannerMode = mode;
             if(mode === 'BUSCA') window.clearSearch();
@@ -312,7 +306,7 @@
             const config = { 
                 fps: 25, 
                 qrbox: (w, h) => {
-                    let width = w * 0.95, height = Math.min(w, h) * 0.3;
+                    let width = w * 0.9, height = Math.min(w, h) * 0.3;
                     if (width > 420) width = 420; if (height < 120) height = 120;
                     return { width: width, height: height };
                 },
@@ -322,7 +316,8 @@
             html5QrCode.start({ facingMode: "environment" }, config, (text) => {
                 window.closeScannerModal();
                 if(window.scannerMode === 'BUSCA') {
-                    document.getElementById('search-input').value = text;
+                    const inp = document.getElementById('search-input');
+                    if(inp) inp.value = text;
                     window.applyFilters();
                 } else { window.quickLookup(text); }
             }, () => {});
@@ -343,7 +338,7 @@
                 document.getElementById('internalCode').value = found.internalCode;
                 document.getElementById('description').value = found.description;
                 document.getElementById('laboratory').value = found.laboratory;
-                document.getElementById('form-title').textContent = "Adicionar Novo Lote";
+                document.getElementById('form-title').textContent = "Adicionar Lote";
                 document.getElementById('barcode').disabled = true;
             } else { window.showMessage("Não localizado.", "error"); }
         };
@@ -403,18 +398,14 @@
                     const v = line.split(delimiter).map(x => x.trim());
                     if(v.length >= 6) {
                         const data = {
-                            barcode: v[0].replace(/[^0-9]/g, ''), 
-                            internalCode: v[1], 
-                            description: v[2], 
-                            laboratory: v[3],
-                            expirationDate: normalizeDate(v[4]),
-                            quantity: parseInt(v[5]),
+                            barcode: v[0].replace(/[^0-9]/g, ''), internalCode: v[1], description: v[2], laboratory: v[3],
+                            expirationDate: normalizeDate(v[4]), quantity: parseInt(v[5]),
                             searchTerms: (v[0]+v[1]+v[2]).toLowerCase()
                         };
                         await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), data);
                     }
                 }
-                window.showMessage("Importação de Lotes Concluída!");
+                window.showMessage("Importação concluída!");
                 window.closeImportLotesModal();
             };
             reader.readAsText(file);
@@ -436,7 +427,7 @@
                         await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), data);
                     }
                 }
-                window.showMessage("Importação de Produtos Concluída!");
+                window.showMessage("Importação inicial concluída!");
                 window.closeImportModal();
             };
             reader.readAsText(file);
