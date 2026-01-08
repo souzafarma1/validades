@@ -36,7 +36,7 @@
     <div id="app" class="container">
         <header class="py-6 mb-8 bg-white shadow-md rounded-lg no-print">
             <h1 class="text-3xl font-bold text-center text-red-700">Souza Farma - Controle de Validade (ONLINE)</h1>
-            <p class="text-center text-gray-500 mt-2">Sistema para Controle de Estoque (Suporte a Excel).</p>
+            <p class="text-center text-gray-500 mt-2">Pronto para Hospedagem Externa e Acesso Móvel.</p>
         </header>
 
         <div id="message-container" class="fixed top-4 right-4 space-y-2 no-print"></div>
@@ -258,29 +258,25 @@
 
         // --- UTILIDADES ---
 
-        // Função ultra-robusta para converter notação científica do Excel em número de 13 dígitos
         function cleanBarcode(raw) {
             if (raw === undefined || raw === null || raw === "") return "";
             let str = raw.toString().trim().replace(',', '.'); 
             
-            // Se o texto contiver notação científica (E+)
             if (str.toUpperCase().includes('E+')) {
                 try {
                     let num = Number(str);
                     if (!isNaN(num)) {
-                        return num.toFixed(0); // Garante o número completo como texto
+                        return num.toLocaleString('fullwide', {useGrouping:false});
                     }
-                } catch(e) {
-                    console.error("Erro na conversão científica:", e);
-                }
+                } catch(e) { console.error(e); }
             }
-            // Fallback: Remove tudo o que não é número
-            return str.replace(/[^0-9]/g, '');
+            // Remove .0 comum no Excel e outros caracteres não numéricos
+            return str.split('.')[0].replace(/[^0-9]/g, '');
         }
 
         function getStandardExpirationDate(dateStr) {
             if (!dateStr) return null;
-            const normalized = dateStr.toLowerCase().trim();
+            const normalized = dateStr.toString().toLowerCase().trim();
             if (/^\d{4}-\d{2}$/.test(normalized)) return normalized;
             
             const partsMonthYear = normalized.match(/([a-z]+)[-\s/]?(\d{2,4})/); 
@@ -334,29 +330,26 @@
             setTimeout(() => { element.style.opacity = '0'; setTimeout(() => element.remove(), 300); }, 5000);
         }
 
-        // --- PROCESSAMENTO DE ARQUIVO (EXCEL/CSV) ---
         async function processFile(file, delimiter) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
-
                 reader.onload = (e) => {
                     try {
-                        let rows = [];
                         if (isExcel) {
                             const data = new Uint8Array(e.target.result);
                             const workbook = XLSX.read(data, { type: 'array' });
-                            const sheetName = workbook.SheetNames[0];
-                            const worksheet = workbook.Sheets[sheetName];
-                            rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+                            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                            // raw: false força a leitura do texto formatado (resolve notação científica)
+                            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false });
+                            resolve(rows);
                         } else {
                             const text = e.target.result;
-                            rows = text.split('\n').filter(l => l.trim() !== '').map(l => l.replace(/\r/g, '').split(delimiter).map(v => v.trim()));
+                            const rows = text.split('\n').filter(l => l.trim() !== '').map(l => l.replace(/\r/g, '').split(delimiter).map(v => v.trim()));
+                            resolve(rows);
                         }
-                        resolve(rows);
                     } catch (err) { reject(err); }
                 };
-
                 if (isExcel) reader.readAsArrayBuffer(file);
                 else reader.readAsText(file);
             });
@@ -406,13 +399,12 @@
                 const rows = await processFile(file, delimiter);
                 const promises = [];
                 rows.forEach(v => {
-                    if (v.length >= 5) {
+                    if (v.length >= 4) {
                         let barcode = cleanBarcode(v[0]), internalCode = v[1], description = v[2], laboratory = v[3];
                         let expirationDate = v.length >= 6 ? getStandardExpirationDate(v[4]) : null;
-                        let quantity = parseInt(v[v.length >= 6 ? 5 : 4], 10) || 0;
-                        if (barcode && internalCode) {
-                            const data = { barcode, internalCode, description, laboratory, quantity, expirationDate, searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase(), launchedAt: Date.now() };
-                            promises.push(addDoc(getCollectionRef(), data));
+                        let quantity = v.length >= 6 ? (parseInt(v[5], 10) || 0) : (parseInt(v[4], 10) || 0);
+                        if (barcode || internalCode) {
+                            promises.push(addDoc(getCollectionRef(), { barcode, internalCode, description, laboratory, quantity, expirationDate, searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase(), launchedAt: Date.now() }));
                         }
                     }
                 });
@@ -434,9 +426,12 @@
                 
                 const promises = [];
                 rows.forEach(v => {
-                    if (v.length >= 6) {
-                        const barcode = cleanBarcode(v[0]), internalCode = v[1], description = v[2], laboratory = v[3];
-                        const exp = getStandardExpirationDate(v[4]), quantity = parseInt(v[5], 10) || 0;
+                    // Verifica se tem os campos mínimos necessários (Barras, Interno, Nome, Lab, Validade)
+                    if (v.length >= 5) {
+                        const barcode = cleanBarcode(v[0]), internalCode = v[1].toString().trim(), description = v[2], laboratory = v[3];
+                        const exp = getStandardExpirationDate(v[4]);
+                        const quantity = v.length >= 6 ? (parseInt(v[5], 10) || 0) : 0;
+                        
                         if (exp && internalCode) {
                             const data = { barcode, internalCode, description, laboratory, quantity, expirationDate: exp, searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase(), launchedAt: Date.now() };
                             const key = `${internalCode}_${exp}`;
@@ -446,7 +441,7 @@
                 });
                 await Promise.all(promises);
                 showMessage("Atualização concluída."); closeImportLotesModal();
-            } catch (e) { showMessage("Erro ao atualizar lotes.", "error"); }
+            } catch (e) { console.error(e); showMessage("Erro na atualização.", "error"); }
         }
 
         function renderMedications(meds) {
