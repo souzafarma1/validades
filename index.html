@@ -238,7 +238,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, addDoc, setDoc, onSnapshot, collection, query, where, deleteDoc, getDoc, updateDoc, Timestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; 
+        import { getFirestore, doc, addDoc, setDoc, onSnapshot, collection, query, where, deleteDoc, getDoc, updateDoc, Timestamp, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; 
 
         const APP_CONFIG = {
             apiKey: "AIzaSyDc9-jix-tXCV8JHzivDR8pY1iCNNJeDPg",
@@ -270,7 +270,6 @@
                     }
                 } catch(e) { console.error(e); }
             }
-            // Remove .0 comum no Excel e outros caracteres não numéricos
             return str.split('.')[0].replace(/[^0-9]/g, '');
         }
 
@@ -340,7 +339,6 @@
                             const data = new Uint8Array(e.target.result);
                             const workbook = XLSX.read(data, { type: 'array' });
                             const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                            // raw: false força a leitura do texto formatado (resolve notação científica)
                             const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false });
                             resolve(rows);
                         } else {
@@ -388,7 +386,39 @@
         });
 
         window.deleteMedication = async (id) => { if (confirm("Deletar este lote?")) await deleteDoc(doc(getCollectionRef(), id)); }
-        window.confirmDeleteAll = async () => { if (confirm("⚠️ APAGAR TUDO?") && confirm("🛑 CONFIRMAR EXCLUSÃO TOTAL?")) { const snap = await getDocs(getCollectionRef()); await Promise.all(snap.docs.map(d => deleteDoc(doc(getCollectionRef(), d.id)))); showMessage("Zerado!"); } }
+        
+        // CORREÇÃO: Função de exclusão total otimizada com Batches para não travar
+        window.confirmDeleteAll = async () => { 
+            if (!isFirebaseReady) return;
+            if (confirm("⚠️ APAGAR TUDO?") && confirm("🛑 CONFIRMAR EXCLUSÃO TOTAL?")) { 
+                try {
+                    const snap = await getDocs(getCollectionRef()); 
+                    const docs = snap.docs;
+                    
+                    if (docs.length === 0) {
+                        showMessage("O inventário já está vazio.");
+                        return;
+                    }
+
+                    showMessage("Iniciando limpeza total... Aguarde.", "info");
+
+                    // Processamento em lotes de 500 para evitar travamentos
+                    for (let i = 0; i < docs.length; i += 500) {
+                        const batch = writeBatch(db);
+                        const chunk = docs.slice(i, i + 500);
+                        chunk.forEach(d => {
+                            batch.delete(doc(getCollectionRef(), d.id));
+                        });
+                        await batch.commit();
+                    }
+
+                    showMessage("Inventário zerado com sucesso!"); 
+                } catch (e) {
+                    console.error(e);
+                    showMessage("Erro ao excluir dados.", "error");
+                }
+            } 
+        }
 
         window.handleBulkImport = async () => {
             if (!isFirebaseReady) return;
@@ -426,7 +456,6 @@
                 
                 const promises = [];
                 rows.forEach(v => {
-                    // Verifica se tem os campos mínimos necessários (Barras, Interno, Nome, Lab, Validade)
                     if (v.length >= 5) {
                         const barcode = cleanBarcode(v[0]), internalCode = v[1].toString().trim(), description = v[2], laboratory = v[3];
                         const exp = getStandardExpirationDate(v[4]);
