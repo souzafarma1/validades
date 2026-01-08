@@ -185,7 +185,7 @@
             <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="closeImportModal()"> &times; </button>
             <h2 class="text-2xl font-semibold mb-6 text-purple-700">Importação Inicial de Produtos</h2>
             <p class="text-sm text-gray-600 mb-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                **Instruções:** Exporte sua planilha do Excel para o formato **CSV (Ponto e Vírgula)**. A ordem das colunas PODE SER: **BARRAS, INTERNO, DESCRIÇÃO, LABORATÓRIO, VALIDADE, QUANTIDADE.** (A Validade é opcional nesta tela).
+                **Instruções:** Exporte sua planilha do Excel para o formato **CSV (Ponto e Vírgula)**. A ordem das colunas PODE SER: **BARRAS, INTERNO, DESCRIÇÃO, LABORATÓRIO, VALIDADE, QUANTIDADE.**
             </p>
             <div class="mb-4"> <label for="bulk-file-input" class="block text-sm font-medium text-gray-700 mb-1"> Arquivo CSV/TSV: </label> <input type="file" id="bulk-file-input" accept=".csv, .tsv" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 transition duration-150 bg-white"> </div>
             <div class="mb-6">
@@ -196,7 +196,7 @@
                     <option value="\t">Tabulação (TSV)</option>
                 </select>
             </div>
-            <button id="import-button" onclick="handleBulkImport()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-purple-500 focus:ring-opacity-50"> Importar Produtos </button>
+            <button id="import-button" onclick="handleBulkImport()" class="w-full bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-purple-500 focus:ring-opacity-50"> Importar Produtos </button>
             <button type="button" class="w-full mt-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out" onclick="closeImportModal()"> Cancelar </button>
         </div>
     </div>
@@ -263,6 +263,23 @@
 
         // --- FUNÇÕES DE UTILIDADE ---
 
+        // AJUSTADO: Função para limpar e converter códigos de barras que vêm em notação científica (ex: 7,89E+12)
+        function cleanBarcode(raw) {
+            if (!raw) return "";
+            let str = raw.toString().trim();
+            // Se estiver em notação científica (contém E+)
+            if (str.toUpperCase().includes('E+')) {
+                try {
+                    // Converte para número e então para string inteira sem arredondamentos acidentais
+                    return BigInt(Math.round(Number(str.replace(',', '.')))).toString();
+                } catch(e) {
+                    return str.replace(/[^0-9]/g, '');
+                }
+            }
+            // Remove qualquer coisa que não seja número (incluindo pontos de milhar ou vírgulas decimais acidentais)
+            return str.replace(/[^0-9]/g, '');
+        }
+
         function getStandardExpirationDate(dateStr) {
             if (!dateStr) return null;
             const normalized = dateStr.toLowerCase().trim();
@@ -293,25 +310,18 @@
             return collection(db, 'artifacts', appId, 'public', 'data', COLLECTION_NAME); 
         }
         
-        // AJUSTADO: Prioridade para Vencidos ou Próximos de Vencer (Data Ascendente)
-        // Itens sem validade (PENDENTE) vão para o final.
         function sortAndRender() {
             allMedications.sort((a, b) => {
                 // 1. Tratamento para itens sem validade (vão para o final)
                 if (!a.expirationDate && b.expirationDate) return 1;
                 if (a.expirationDate && !b.expirationDate) return -1;
                 if (!a.expirationDate && !b.expirationDate) {
-                    return (b.launchedAt || 0) - (a.launchedAt || 0); // Desempate por lançamento
+                    return (b.launchedAt || 0) - (a.launchedAt || 0); 
                 }
-
-                // 2. Ordenação por validade (Mais antiga/Vencida primeiro no topo)
                 const dateCompare = a.expirationDate.localeCompare(b.expirationDate);
-                
-                // 3. Se as datas forem iguais, o lançamento mais recente fica em cima
                 if (dateCompare === 0) {
                     return (b.launchedAt || 0) - (a.launchedAt || 0);
                 }
-                
                 return dateCompare;
             });
             applyFilters();
@@ -442,7 +452,8 @@
                 const promises = lines.map(line => {
                     const v = line.replace(/\r/g, '').split(delimiter).map(x => x.trim());
                     if (v.length >= 5) {
-                        let barcode = v[0], internalCode = v[1], description = v[2], laboratory = v[3];
+                        let rawBarcode = v[0], internalCode = v[1], description = v[2], laboratory = v[3];
+                        let barcode = cleanBarcode(rawBarcode); // AJUSTADO: Limpeza do Barcode
                         let expirationDate = null, quantity = 0;
                         if (v.length >= 6) {
                             expirationDate = getStandardExpirationDate(v[4]);
@@ -485,7 +496,8 @@
                 const promises = lines.map(line => {
                     const v = line.replace(/\r/g, '').split(delimiter).map(x => x.trim());
                     if (v.length >= 6) {
-                        const barcode = v[0].replace(/[^0-9]/g, ''), internalCode = v[1], description = v[2], laboratory = v[3];
+                        const rawBarcode = v[0], internalCode = v[1], description = v[2], laboratory = v[3];
+                        const barcode = cleanBarcode(rawBarcode); // AJUSTADO: Limpeza do Barcode
                         const exp = getStandardExpirationDate(v[4]), quantity = parseInt(v[5], 10) || 0;
                         if (exp) {
                             const data = { 
