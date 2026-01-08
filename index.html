@@ -89,7 +89,7 @@
 
             <div class="lg:w-3/4">
                 <div class="bg-white p-4 sm:p-6 rounded-xl shadow-xl border border-gray-200">
-                    <h2 class="text-2xl font-semibold mb-4 text-blue-700">Itens com Baixa Validade</h2>
+                    <h2 class="text-2xl font-semibold mb-4 text-blue-700">Produtos em Estoque</h2>
 
                     <div class="flex space-x-2 mb-4 no-print">
                         <button onclick="exportToCsv()"
@@ -196,7 +196,7 @@
                     <option value="\t">Tabulação (TSV)</option>
                 </select>
             </div>
-            <button id="import-button" onclick="handleBulkImport()" class="w-full bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-purple-500 focus:ring-opacity-50"> Importar Produtos </button>
+            <button id="import-button" onclick="handleBulkImport()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-purple-500 focus:ring-opacity-50"> Importar Produtos </button>
             <button type="button" class="w-full mt-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out" onclick="closeImportModal()"> Cancelar </button>
         </div>
     </div>
@@ -263,20 +263,30 @@
 
         // --- FUNÇÕES DE UTILIDADE ---
 
-        // AJUSTADO: Função para limpar e converter códigos de barras que vêm em notação científica (ex: 7,89E+12)
+        // AJUSTADO: Função ultra-robusta para converter notação científica do Excel em número completo
         function cleanBarcode(raw) {
             if (!raw) return "";
             let str = raw.toString().trim();
-            // Se estiver em notação científica (contém E+)
+            
+            // Corrige locale do Excel (vírgula decimal)
+            str = str.replace(',', '.');
+
+            // Se o texto contiver notação científica (E+)
             if (str.toUpperCase().includes('E+')) {
                 try {
-                    // Converte para número e então para string inteira sem arredondamentos acidentais
-                    return BigInt(Math.round(Number(str.replace(',', '.')))).toString();
+                    // Tenta converter usando formatação de precisão total
+                    // Ex: "7,89857E+12" -> 7898570000000 (ou o valor exato se houver precisão no Number)
+                    let num = parseFloat(str);
+                    if (!isNaN(num)) {
+                        // toFixed(0) garante que não tenha decimais e nem notação científica no retorno
+                        return num.toFixed(0);
+                    }
                 } catch(e) {
-                    return str.replace(/[^0-9]/g, '');
+                    console.error("Erro na conversão científica:", e);
                 }
             }
-            // Remove qualquer coisa que não seja número (incluindo pontos de milhar ou vírgulas decimais acidentais)
+            
+            // Fallback: Remove tudo o que não é dígito
             return str.replace(/[^0-9]/g, '');
         }
 
@@ -453,7 +463,7 @@
                     const v = line.replace(/\r/g, '').split(delimiter).map(x => x.trim());
                     if (v.length >= 5) {
                         let rawBarcode = v[0], internalCode = v[1], description = v[2], laboratory = v[3];
-                        let barcode = cleanBarcode(rawBarcode); // AJUSTADO: Limpeza do Barcode
+                        let barcode = cleanBarcode(rawBarcode); 
                         let expirationDate = null, quantity = 0;
                         if (v.length >= 6) {
                             expirationDate = getStandardExpirationDate(v[4]);
@@ -487,8 +497,9 @@
             if (!file) return;
             const delimiter = document.getElementById('delimiter-lotes-select').value;
             const reader = new FileReader();
-            reader.onload = async (e) => {
-                const lines = e.target.result.split('\n').filter(l => l.trim() !== '');
+            reader.onload = async (event) => {
+                const rawData = event.target.result;
+                const lines = rawData.split('\n').filter(line => line.trim() !== '');
                 const snap = await getDocs(getCollectionRef());
                 const existing = {};
                 snap.forEach(d => { const data = d.data(); if(data.internalCode && data.expirationDate) existing[`${data.internalCode}_${data.expirationDate}`] = d.id; });
@@ -497,7 +508,7 @@
                     const v = line.replace(/\r/g, '').split(delimiter).map(x => x.trim());
                     if (v.length >= 6) {
                         const rawBarcode = v[0], internalCode = v[1], description = v[2], laboratory = v[3];
-                        const barcode = cleanBarcode(rawBarcode); // AJUSTADO: Limpeza do Barcode
+                        const barcode = cleanBarcode(rawBarcode); 
                         const exp = getStandardExpirationDate(v[4]), quantity = parseInt(v[5], 10) || 0;
                         if (exp) {
                             const data = { 
