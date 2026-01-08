@@ -7,6 +7,8 @@
     <title>Souza Farma - Controle de Validade (Produção)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <!-- Biblioteca para ler arquivos Excel diretamente -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
@@ -34,7 +36,7 @@
     <div id="app" class="container">
         <header class="py-6 mb-8 bg-white shadow-md rounded-lg no-print">
             <h1 class="text-3xl font-bold text-center text-red-700">Souza Farma - Controle de Validade (ONLINE)</h1>
-            <p class="text-center text-gray-500 mt-2">Sistema em Nuvem para Controle de Estoque.</p>
+            <p class="text-center text-gray-500 mt-2">Sistema para Controle de Estoque.</p>
         </header>
 
         <div id="message-container" class="fixed top-4 right-4 space-y-2 no-print"></div>
@@ -56,11 +58,11 @@
                         </button>
                         <button onclick="openImportModal()"
                             class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-200 ease-in-out transform hover:scale-[1.01]">
-                            Importar Produtos (Inicial)
+                            Importar Produtos (Excel)
                         </button>
                         <button onclick="openImportLotesModal()"
                             class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-200 ease-in-out transform hover:scale-[1.01]">
-                            Atualizar Lotes c/ Validade (Excel)
+                            Atualizar Lotes (Excel)
                         </button>
                         <button onclick="confirmDeleteAll()"
                             class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-200 ease-in-out transform hover:scale-[1.01]">
@@ -185,18 +187,18 @@
             <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="closeImportModal()"> &times; </button>
             <h2 class="text-2xl font-semibold mb-6 text-purple-700">Importação Inicial de Produtos</h2>
             <p class="text-sm text-gray-600 mb-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                **Instruções:** Exporte sua planilha do Excel para o formato **CSV (Ponto e Vírgula)**. A ordem das colunas PODE SER: **BARRAS, INTERNO, DESCRIÇÃO, LABORATÓRIO, VALIDADE, QUANTIDADE.**
+                **Instruções:** Selecione seu arquivo Excel (**XLSX/XLS**) diretamente. A ordem das colunas PODE SER: **BARRAS, INTERNO, DESCRIÇÃO, LABORATÓRIO, VALIDADE, QUANTIDADE.**
             </p>
-            <div class="mb-4"> <label for="bulk-file-input" class="block text-sm font-medium text-gray-700 mb-1"> Arquivo CSV/TSV: </label> <input type="file" id="bulk-file-input" accept=".csv, .tsv" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 transition duration-150 bg-white"> </div>
+            <div class="mb-4"> <label for="bulk-file-input" class="block text-sm font-medium text-gray-700 mb-1"> Arquivo Excel ou CSV: </label> <input type="file" id="bulk-file-input" accept=".xlsx, .xls, .csv, .tsv" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 transition duration-150 bg-white"> </div>
             <div class="mb-6">
-                <label for="delimiter-select" class="block text-sm font-medium text-gray-700 mb-1"> Separador (Delimitador): </label>
+                <label for="delimiter-select" class="block text-sm font-medium text-gray-700 mb-1"> Delimitador (Apenas para CSV): </label>
                 <select id="delimiter-select" class="w-full p-2 border border-gray-300 rounded-lg">
                     <option value=";">Ponto e Vírgula (;)</option> 
                     <option value=",">Vírgula (,)</option>
                     <option value="\t">Tabulação (TSV)</option>
                 </select>
             </div>
-            <button id="import-button" onclick="handleBulkImport()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-purple-500 focus:ring-opacity-50"> Importar Produtos </button>
+            <button id="import-button" onclick="handleBulkImport()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-purple-500 focus:ring-opacity-50"> Importar Arquivo </button>
             <button type="button" class="w-full mt-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out" onclick="closeImportModal()"> Cancelar </button>
         </div>
     </div>
@@ -204,20 +206,20 @@
     <div id="import-lotes-modal" class="modal-overlay hidden no-print">
         <div class="modal-content">
             <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl" onclick="closeImportLotesModal()"> &times; </button>
-            <h2 class="text-2xl font-semibold mb-6 text-orange-700">Atualização de Lotes em Massa com Validade</h2>
+            <h2 class="text-2xl font-semibold mb-6 text-orange-700">Atualização de Lotes em Massa</h2>
             <p class="text-sm text-gray-600 mb-4 p-3 bg-red-50 rounded-lg border border-red-200">
-                **ATENÇÃO:** Esta importação irá **ADICIONAR/ATUALIZAR LOTES**. A ordem das colunas DEVE ser: **CÓDIGO DE BARRAS, CÓDIGO INTERNO, DESCRIÇÃO, LABORATÓRIO, VALIDADE, QUANTIDADE.** A Validade será **corrigida automaticamente** (ex: `dez-25` será convertido para `2025-12`).
+                **IMPORTANTE:** Selecione seu arquivo Excel (**XLSX/XLS**) original. Ordem das colunas: **BARRAS, INTERNO, DESCRIÇÃO, LABORATÓRIO, VALIDADE, QUANTIDADE.** A validade (ex: `dez-25`) será corrigida automaticamente.
             </p>
-            <div class="mb-4"> <label for="bulk-lotes-file-input" class="block text-sm font-medium text-gray-700 mb-1"> Arquivo CSV/TSV: </label> <input type="file" id="bulk-lotes-file-input" accept=".csv, .tsv" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 transition duration-150 bg-white"> </div>
+            <div class="mb-4"> <label for="bulk-lotes-file-input" class="block text-sm font-medium text-gray-700 mb-1"> Arquivo Excel ou CSV: </label> <input type="file" id="bulk-lotes-file-input" accept=".xlsx, .xls, .csv, .tsv" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 transition duration-150 bg-white"> </div>
             <div class="mb-6">
-                <label for="delimiter-lotes-select" class="block text-sm font-medium text-gray-700 mb-1"> Separador (Delimitador): </label>
+                <label for="delimiter-lotes-select" class="block text-sm font-medium text-gray-700 mb-1"> Delimitador (Apenas para CSV): </label>
                 <select id="delimiter-lotes-select" class="w-full p-2 border border-gray-300 rounded-lg">
                     <option value=";">Ponto e Vírgula (;)</option> 
                     <option value=",">Vírgula (,)</option>
                     <option value="\t">Tabulação (TSV)</option>
                 </select>
             </div>
-            <button id="import-lotes-button" onclick="handleBulkLotesImport()" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-orange-500 focus:ring-opacity-50"> Importar/Atualizar Lotes </button>
+            <button id="import-lotes-button" onclick="handleBulkLotesImport()" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-orange-500 focus:ring-opacity-50"> Atualizar Dados </button>
             <button type="button" class="w-full mt-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out" onclick="closeImportLotesModal()"> Cancelar </button>
         </div>
     </div>
@@ -247,39 +249,19 @@
             appId: "1:300173058270:web:970549624a4c46af3d624f"
         };
         const EXTERNAL_APP_ID = "controle-de-validade-e708a";
-        
         const appId = typeof __app_id !== 'undefined' ? __app_id : EXTERNAL_APP_ID;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         
-        let firebaseConfig = APP_CONFIG;
-        let app, db, auth, userId = null;
-        let allMedications = []; 
-        let currentFilteredList = []; 
+        let db, auth, userId = null, allMedications = [], currentFilteredList = [], html5QrCode = null, isFirebaseReady = false;
         const COLLECTION_NAME = 'medicamentos';
-        let html5QrCode = null;
-        let isFirebaseReady = false;
-
         const MONTH_MAP = { jan: '01', fev: '02', mar: '03', abr: '04', mai: '05', jun: '06', jul: '07', ago: '08', set: '09', out: '10', nov: '11', dez: '12' };
 
-        // --- FUNÇÕES DE UTILIDADE ---
+        // --- UTILIDADES ---
 
-        // AJUSTADO: Função ultra-robusta para converter notação científica do Excel (E+) em número de 13 dígitos
         function cleanBarcode(raw) {
             if (!raw) return "";
-            let str = raw.toString().trim().replace(',', '.'); // Corrige vírgula para ponto decimal
-            
-            // Se o texto contiver notação científica (E+)
-            if (str.toUpperCase().includes('E+')) {
-                try {
-                    // Number(str) interpreta o E+12. toLocaleString com as opções abaixo
-                    // garante que o número seja retornado como string inteira sem abreviação
-                    return Number(str).toLocaleString('fullwide', {useGrouping:false});
-                } catch(e) {
-                    console.error("Erro na conversão científica:", e);
-                }
-            }
-            
-            // Remove qualquer caractere que não seja número (limpeza padrão)
+            let str = raw.toString().trim();
+            // Se for XLSX, o SheetJS já lida com o número, mas limpamos caracteres extras
             return str.replace(/[^0-9]/g, '');
         }
 
@@ -309,7 +291,6 @@
         }
 
         function getCollectionRef() {
-            if (!db || !userId) throw new Error("Firebase não inicializado.");
             return collection(db, 'artifacts', appId, 'public', 'data', COLLECTION_NAME); 
         }
         
@@ -317,14 +298,9 @@
             allMedications.sort((a, b) => {
                 if (!a.expirationDate && b.expirationDate) return 1;
                 if (a.expirationDate && !b.expirationDate) return -1;
-                if (!a.expirationDate && !b.expirationDate) {
-                    return (b.launchedAt || 0) - (a.launchedAt || 0); 
-                }
+                if (!a.expirationDate && !b.expirationDate) return (b.launchedAt || 0) - (a.launchedAt || 0); 
                 const dateCompare = a.expirationDate.localeCompare(b.expirationDate);
-                if (dateCompare === 0) {
-                    return (b.launchedAt || 0) - (a.launchedAt || 0);
-                }
-                return dateCompare;
+                return dateCompare === 0 ? (b.launchedAt || 0) - (a.launchedAt || 0) : dateCompare;
             });
             applyFilters();
         }
@@ -338,229 +314,146 @@
         function showMessage(text, type = 'success') {
             const container = document.getElementById('message-container');
             const element = document.createElement('div');
-            let bgColor, icon;
-            if (type === 'success') { bgColor = 'bg-green-100 border-green-400 text-green-700'; icon = '✅'; } 
-            else if (type === 'error') { bgColor = 'bg-red-100 border-red-400 text-red-700'; icon = '❌'; } 
-            else { bgColor = 'bg-blue-100 border-blue-400 text-blue-700'; icon = 'ℹ️'; }
+            let bgColor = type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700';
             element.className = `message-box ${bgColor} border-l-4`;
-            element.innerHTML = `<div class="flex items-center"><span class="mr-2">${icon}</span><span>${text}</span><button class="ml-4 text-gray-500 hover:text-gray-700" onclick="this.parentNode.parentNode.remove()">&times;</button></div>`;
+            element.innerHTML = `<div class="flex items-center"><span>${text}</span><button class="ml-4" onclick="this.parentNode.parentNode.remove()">&times;</button></div>`;
             container.appendChild(element);
             setTimeout(() => { element.style.opacity = '0'; setTimeout(() => element.remove(), 300); }, 5000);
         }
 
-        // Elementos do DOM
-        const form = document.getElementById('medication-form');
-        const listContainer = document.getElementById('medication-list');
-        const searchInput = document.getElementById('search-input');
-        const expirationFilterInput = document.getElementById('expiration-filter');
-        const quickSearchInput = document.getElementById('quick-search-input');
-        const formTitle = document.getElementById('form-title');
-        const submitButton = document.getElementById('submit-button');
-        const cancelButton = document.getElementById('cancel-edit-button');
+        // --- PROCESSAMENTO DE ARQUIVO (EXCEL/CSV) ---
+        async function processFile(file, delimiter) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
 
-        window.openCadastroModal = function() { document.getElementById('medication-modal').classList.remove('hidden'); resetForm(); }
-        window.closeModal = function() { document.getElementById('medication-modal').classList.add('hidden'); resetForm(); }
-        window.openImportModal = function() { document.getElementById('import-modal').classList.remove('hidden'); }
-        window.closeImportModal = function() { document.getElementById('import-modal').classList.add('hidden'); }
-        window.openImportLotesModal = function() { document.getElementById('import-lotes-modal').classList.remove('hidden'); }
-        window.closeImportLotesModal = function() { document.getElementById('import-lotes-modal').classList.add('hidden'); }
-        window.resetForm = function() {
-            form.reset();
-            document.getElementById('doc-id').value = '';
-            formTitle.textContent = 'Cadastrar Novo Produto';
-            submitButton.textContent = 'Cadastrar Medicamento';
-            cancelButton.classList.add('hidden');
-            document.getElementById('barcode').disabled = false;
-            document.getElementById('internalCode').disabled = false;
-            document.getElementById('description').disabled = false;
-            document.getElementById('laboratory').disabled = false;
+                reader.onload = (e) => {
+                    try {
+                        let rows = [];
+                        if (isExcel) {
+                            const data = new Uint8Array(e.target.result);
+                            const workbook = XLSX.read(data, { type: 'array' });
+                            const sheetName = workbook.SheetNames[0];
+                            const worksheet = workbook.Sheets[sheetName];
+                            rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+                        } else {
+                            const text = e.target.result;
+                            rows = text.split('\n').filter(l => l.trim() !== '').map(l => l.replace(/\r/g, '').split(delimiter).map(v => v.trim()));
+                        }
+                        resolve(rows);
+                    } catch (err) { reject(err); }
+                };
+
+                if (isExcel) reader.readAsArrayBuffer(file);
+                else reader.readAsText(file);
+            });
+        }
+
+        // --- DOM ---
+        const form = document.getElementById('medication-form'), listContainer = document.getElementById('medication-list'), searchInput = document.getElementById('search-input'), expirationFilterInput = document.getElementById('expiration-filter'), quickSearchInput = document.getElementById('quick-search-input'), formTitle = document.getElementById('form-title'), submitButton = document.getElementById('submit-button'), cancelButton = document.getElementById('cancel-edit-button');
+
+        window.openCadastroModal = () => { document.getElementById('medication-modal').classList.remove('hidden'); resetForm(); }
+        window.closeModal = () => { document.getElementById('medication-modal').classList.add('hidden'); resetForm(); }
+        window.openImportModal = () => document.getElementById('import-modal').classList.remove('hidden');
+        window.closeImportModal = () => document.getElementById('import-modal').classList.add('hidden');
+        window.openImportLotesModal = () => document.getElementById('import-lotes-modal').classList.remove('hidden');
+        window.closeImportLotesModal = () => document.getElementById('import-lotes-modal').classList.add('hidden');
+        window.resetForm = () => {
+            form.reset(); document.getElementById('doc-id').value = ''; formTitle.textContent = 'Cadastrar Novo Produto'; submitButton.textContent = 'Cadastrar Medicamento'; cancelButton.classList.add('hidden');
+            ['barcode','internalCode','description','laboratory'].forEach(id => document.getElementById(id).disabled = false);
         }
 
         async function bootstrap() {
             try {
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
+                const app = initializeApp(APP_CONFIG);
+                auth = getAuth(app); db = getFirestore(app);
                 if (initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
                 else await signInAnonymously(auth);
                 isFirebaseReady = true;
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        onSnapshot(getCollectionRef(), (snapshot) => {
-                            allMedications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                            sortAndRender();
-                        });
-                    }
-                });
-            } catch (e) { showMessage("Erro ao conectar.", "error"); }
+                onAuthStateChanged(auth, (user) => { if (user) { userId = user.uid; onSnapshot(getCollectionRef(), (snap) => { allMedications = snap.docs.map(d => ({ id: d.id, ...d.data() })); sortAndRender(); }); } });
+            } catch (e) { showMessage("Erro de conexão.", "error"); }
         }
 
         form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!isFirebaseReady) return;
-            const docId = document.getElementById('doc-id').value;
-            const barcode = document.getElementById('barcode').value.trim();
-            const internalCode = document.getElementById('internalCode').value.trim();
-            const description = document.getElementById('description').value.trim();
-            const laboratory = document.getElementById('laboratory').value.trim();
-            const quantity = parseInt(document.getElementById('quantity').value, 10);
-            const expirationDate = document.getElementById('expirationDate').value;
-            
-            const data = { 
-                barcode, 
-                internalCode, 
-                description, 
-                laboratory, 
-                quantity, 
-                expirationDate: expirationDate || null, 
-                searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase(),
-                launchedAt: Date.now() 
-            };
-
-            try {
-                if (docId) await updateDoc(doc(getCollectionRef(), docId), data);
-                else await addDoc(getCollectionRef(), data);
-                closeModal();
-                showMessage("Salvo com sucesso!");
-            } catch (e) { showMessage("Erro ao salvar.", "error"); }
+            e.preventDefault(); if (!isFirebaseReady) return;
+            const docId = document.getElementById('doc-id').value, barcode = document.getElementById('barcode').value.trim(), internalCode = document.getElementById('internalCode').value.trim(), description = document.getElementById('description').value.trim(), laboratory = document.getElementById('laboratory').value.trim(), quantity = parseInt(document.getElementById('quantity').value, 10), expirationDate = document.getElementById('expirationDate').value;
+            const data = { barcode, internalCode, description, laboratory, quantity, expirationDate: expirationDate || null, searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase(), launchedAt: Date.now() };
+            try { if (docId) await updateDoc(doc(getCollectionRef(), docId), data); else await addDoc(getCollectionRef(), data); closeModal(); showMessage("Salvo!"); } catch (e) { showMessage("Erro!", "error"); }
         });
 
-        window.deleteMedication = async function(id) {
-            if (confirm("Deletar este lote?")) {
-                try { await deleteDoc(doc(getCollectionRef(), id)); showMessage("Excluído!"); } catch (e) { showMessage("Erro.", "error"); }
-            }
-        }
+        window.deleteMedication = async (id) => { if (confirm("Deletar este lote?")) await deleteDoc(doc(getCollectionRef(), id)); }
+        window.confirmDeleteAll = async () => { if (confirm("⚠️ APAGAR TUDO?") && confirm("🛑 CONFIRMAR EXCLUSÃO TOTAL?")) { const snap = await getDocs(getCollectionRef()); await Promise.all(snap.docs.map(d => deleteDoc(doc(getCollectionRef(), d.id)))); showMessage("Zerado!"); } }
 
-        window.confirmDeleteAll = async function() {
-            if (confirm("⚠️ APAGAR TUDO?")) {
-                if (confirm("🛑 ÚLTIMA CHANCE! CONFIRMAR?")) {
-                    const snap = await getDocs(getCollectionRef());
-                    const promises = snap.docs.map(d => deleteDoc(doc(getCollectionRef(), d.id)));
-                    await Promise.all(promises);
-                    showMessage("Inventário zerado.");
-                }
-            }
-        }
-
-        window.handleBulkImport = async function() {
+        window.handleBulkImport = async () => {
             if (!isFirebaseReady) return;
             const file = document.getElementById('bulk-file-input').files[0];
             if (!file) return;
             const delimiter = document.getElementById('delimiter-select').value;
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const lines = e.target.result.split('\n').filter(l => l.trim() !== '');
-                const promises = lines.map(line => {
-                    const v = line.replace(/\r/g, '').split(delimiter).map(x => x.trim());
+            try {
+                const rows = await processFile(file, delimiter);
+                const promises = rows.map(v => {
                     if (v.length >= 5) {
-                        let rawBarcode = v[0], internalCode = v[1], description = v[2], laboratory = v[3];
-                        let barcode = cleanBarcode(rawBarcode); 
-                        let expirationDate = null, quantity = 0;
-                        if (v.length >= 6) {
-                            expirationDate = getStandardExpirationDate(v[4]);
-                            quantity = parseInt(v[5], 10) || 0;
-                        } else {
-                            quantity = parseInt(v[4], 10) || 0;
-                        }
-                        const data = { 
-                            barcode, 
-                            internalCode, 
-                            description, 
-                            laboratory, 
-                            quantity, 
-                            expirationDate, 
-                            searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase(),
-                            launchedAt: Date.now() 
-                        };
+                        let barcode = cleanBarcode(v[0]), internalCode = v[1], description = v[2], laboratory = v[3];
+                        let expirationDate = v.length >= 6 ? getStandardExpirationDate(v[4]) : null;
+                        let quantity = parseInt(v[v.length >= 6 ? 5 : 4], 10) || 0;
+                        const data = { barcode, internalCode, description, laboratory, quantity, expirationDate, searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase(), launchedAt: Date.now() };
                         return addDoc(getCollectionRef(), data);
                     }
                 });
                 await Promise.all(promises);
-                showMessage("Importação concluída.");
-                closeImportModal();
-            };
-            reader.readAsText(file);
+                showMessage("Importação concluída."); closeImportModal();
+            } catch (e) { showMessage("Erro ao ler arquivo.", "error"); }
         }
 
-        window.handleBulkLotesImport = async function() {
+        window.handleBulkLotesImport = async () => {
             if (!isFirebaseReady) return;
             const file = document.getElementById('bulk-lotes-file-input').files[0];
             if (!file) return;
             const delimiter = document.getElementById('delimiter-lotes-select').value;
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                const rawData = event.target.result;
-                const lines = rawData.split('\n').filter(line => line.trim() !== '');
+            try {
+                const rows = await processFile(file, delimiter);
                 const snap = await getDocs(getCollectionRef());
                 const existing = {};
                 snap.forEach(d => { const data = d.data(); if(data.internalCode && data.expirationDate) existing[`${data.internalCode}_${data.expirationDate}`] = d.id; });
                 
-                const promises = lines.map(line => {
-                    const v = line.replace(/\r/g, '').split(delimiter).map(x => x.trim());
+                const promises = rows.map(v => {
                     if (v.length >= 6) {
-                        const rawBarcode = v[0], internalCode = v[1], description = v[2], laboratory = v[3];
-                        const barcode = cleanBarcode(rawBarcode); // AJUSTADO: Mesmo tratamento robusto do Import Inicial
+                        const barcode = cleanBarcode(v[0]), internalCode = v[1], description = v[2], laboratory = v[3];
                         const exp = getStandardExpirationDate(v[4]), quantity = parseInt(v[5], 10) || 0;
                         if (exp) {
-                            const data = { 
-                                barcode, 
-                                internalCode, 
-                                description, 
-                                laboratory, 
-                                quantity, 
-                                expirationDate: exp, 
-                                searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase(),
-                                launchedAt: Date.now() 
-                            };
+                            const data = { barcode, internalCode, description, laboratory, quantity, expirationDate: exp, searchTerms: `${barcode} ${internalCode} ${description} ${laboratory}`.toLowerCase(), launchedAt: Date.now() };
                             const key = `${internalCode}_${exp}`;
                             return existing[key] ? updateDoc(doc(getCollectionRef(), existing[key]), data) : addDoc(getCollectionRef(), data);
                         }
                     }
                 });
                 await Promise.all(promises);
-                showMessage("Lotes atualizados.");
-                closeImportLotesModal();
-            };
-            reader.readAsText(file);
+                showMessage("Atualização concluída."); closeImportLotesModal();
+            } catch (e) { showMessage("Erro no Excel.", "error"); }
         }
 
         function renderMedications(meds) {
-            listContainer.innerHTML = ''; 
-            currentFilteredList = meds;
+            listContainer.innerHTML = ''; currentFilteredList = meds;
             const now = new Date().toISOString().slice(0, 7);
             meds.forEach(med => {
                 const displayDate = med.expirationDate ? `${med.expirationDate.split('-')[1]}/${med.expirationDate.split('-')[0]}` : 'PENDENTE';
-                let expClass = 'bg-white', textCol = 'text-black font-bold';
-                
+                let expClass = 'bg-white';
                 if (med.expirationDate) {
                     const diff = monthDiff(med.expirationDate, now);
-                    if (diff <= 0) { expClass = 'bg-red-100'; }
-                    else if (diff === 1) { expClass = 'bg-yellow-200'; }
-                    else if (diff === 2) { expClass = 'bg-amber-200'; }
-                    else if (diff === 3) { expClass = 'bg-green-100'; }
+                    if (diff <= 0) expClass = 'bg-red-100';
+                    else if (diff === 1) expClass = 'bg-yellow-200';
+                    else if (diff === 2) expClass = 'bg-amber-200';
+                    else if (diff === 3) expClass = 'bg-green-100';
                 }
-                
                 const row = document.createElement('tr');
                 row.className = `hover:bg-gray-50 ${expClass} border-l-4 border-r-4`;
-                row.innerHTML = `
-                    <td class="px-2 py-2 text-xs ${textCol} hidden sm:table-cell">${med.barcode}</td>
-                    <td class="px-2 py-2 text-xs ${textCol}">${med.internalCode}</td>
-                    <td class="px-2 py-2 text-xs ${textCol}">${med.description}</td>
-                    <td class="px-2 py-2 text-xs ${textCol} hidden sm:table-cell">${med.laboratory}</td>
-                    <td class="px-2 py-2 text-xs ${textCol}">${displayDate}</td>
-                    <td class="px-2 py-2 text-xs ${textCol}">${med.quantity}</td>
-                    <td class="px-2 py-2 text-right text-xs no-print">
-                        <button onclick="loadForEdit('${med.id}')" class="text-blue-600 mr-2 font-bold">Edit</button>
-                        <button onclick="deleteMedication('${med.id}')" class="text-red-600 font-bold">Exc</button>
-                    </td>`;
+                row.innerHTML = `<td class="px-2 py-2 text-xs text-black font-bold hidden sm:table-cell">${med.barcode}</td><td class="px-2 py-2 text-xs text-black font-bold">${med.internalCode}</td><td class="px-2 py-2 text-xs text-black font-bold">${med.description}</td><td class="px-2 py-2 text-xs text-black font-bold hidden sm:table-cell">${med.laboratory}</td><td class="px-2 py-2 text-xs text-black font-bold">${displayDate}</td><td class="px-2 py-2 text-xs text-black font-bold">${med.quantity}</td><td class="px-2 py-2 text-right text-xs no-print"><button onclick="loadForEdit('${med.id}')" class="text-blue-600 mr-2 font-bold">Edit</button><button onclick="deleteMedication('${med.id}')" class="text-red-600 font-bold">Exc</button></td>`;
                 listContainer.appendChild(row);
             });
         }
 
         window.applyFilters = () => {
-            const search = searchInput.value.toLowerCase().trim();
-            const exp = expirationFilterInput.value;
+            const search = searchInput.value.toLowerCase().trim(), exp = expirationFilterInput.value;
             let filtered = allMedications;
             if (search) filtered = filtered.filter(m => m.searchTerms.includes(search));
             if (exp) filtered = filtered.filter(m => m.expirationDate === exp);
@@ -572,14 +465,9 @@
             if (item) {
                 document.getElementById('medication-modal').classList.remove('hidden');
                 document.getElementById('doc-id').value = item.id;
-                document.getElementById('barcode').value = item.barcode;
-                document.getElementById('internalCode').value = item.internalCode;
-                document.getElementById('description').value = item.description;
-                document.getElementById('laboratory').value = item.laboratory;
-                document.getElementById('quantity').value = item.quantity;
-                document.getElementById('expirationDate').value = item.expirationDate || '';
-                formTitle.textContent = `Editar Lote: ${item.description}`;
-                submitButton.textContent = 'Salvar Alterações';
+                ['barcode','internalCode','description','laboratory','quantity','expirationDate'].forEach(id => document.getElementById(id).value = item[id] || '');
+                formTitle.textContent = `Editar: ${item.description}`;
+                submitButton.textContent = 'Salvar';
                 cancelButton.classList.remove('hidden');
                 ['barcode','internalCode','description','laboratory'].forEach(id => document.getElementById(id).disabled = true);
             }
@@ -591,10 +479,8 @@
             if (item) {
                 document.getElementById('medication-modal').classList.remove('hidden');
                 ['barcode','internalCode','description','laboratory'].forEach(id => { document.getElementById(id).value = item[id]; document.getElementById(id).disabled = true; });
-                document.getElementById('quantity').value = '';
-                document.getElementById('expirationDate').value = '';
+                document.getElementById('quantity').value = ''; document.getElementById('expirationDate').value = '';
                 formTitle.textContent = `Novo Lote: ${item.description}`;
-                submitButton.textContent = 'Adicionar Lote';
             }
         }
 
@@ -613,6 +499,16 @@
             document.getElementById('scanner-modal').classList.add('hidden');
             if (html5QrCode) html5QrCode.stop();
         }
+
+        window.exportToCsv = () => {
+            if (currentFilteredList.length === 0) return;
+            const headers = ["Barras", "Interno", "Descrição", "Lab", "Validade", "Qtd"];
+            const csv = [headers.join(';'), ...currentFilteredList.map(m => [m.barcode, m.internalCode, m.description, m.laboratory, m.expirationDate, m.quantity].join(';'))].join('\n');
+            const blob = new Blob(["\uFEFF", csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `estoque_${new Date().toISOString().slice(0, 10)}.csv`; link.click();
+        }
+
+        window.printFilteredList = () => window.print();
 
         bootstrap();
     </script>
