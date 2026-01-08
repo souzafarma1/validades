@@ -33,7 +33,7 @@
     <div id="app" class="container">
         <header class="py-6 mb-8 bg-white shadow-md rounded-lg no-print text-center">
             <h1 class="text-3xl font-bold text-red-700">Souza Farma - Controle de Validade</h1>
-            <p id="db-status" class="text-gray-400 text-[10px] mt-1 font-black uppercase tracking-widest">A carregar inventário...</p>
+            <p id="db-status" class="text-center text-gray-400 text-[10px] mt-1 font-black uppercase tracking-widest animate-pulse">Sincronizando Sistema...</p>
         </header>
 
         <div id="message-container" class="fixed top-4 right-4 space-y-2 no-print"></div>
@@ -63,7 +63,7 @@
                 </div>
 
                 <div class="bg-blue-50 p-5 rounded-xl border border-blue-100 shadow-inner text-center">
-                    <h3 class="text-lg font-semibold mb-2 text-blue-700 tracking-tight uppercase text-xs font-black">Lançar Lote Rápido</h3>
+                    <h3 class="text-lg font-semibold mb-2 text-blue-700 tracking-tight uppercase text-xs font-black">Busca Rápida - LOTE</h3>
                     <div class="flex space-x-2">
                         <input type="text" id="quick-search-input" class="flex-grow p-2 border border-blue-300 rounded-lg focus:ring-blue-500 text-sm shadow-sm"
                             placeholder="Ler código..." onchange="window.quickLookup(this.value)">
@@ -118,7 +118,7 @@
                                 </tr>
                             </thead>
                             <tbody id="medication-list" class="bg-white divide-y divide-gray-200 text-sm">
-                                <tr><td colspan="7" class="p-20 text-center text-gray-400 italic font-semibold animate-pulse">Sincronizando dados...</td></tr>
+                                <tr><td colspan="7" class="p-20 text-center text-gray-400 italic font-semibold animate-pulse">Sincronizando dados com o servidor...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -131,7 +131,7 @@
     <div id="medication-modal" class="modal-overlay hidden no-print">
         <div class="modal-content shadow-2xl">
             <button class="absolute top-4 right-4 text-gray-400 text-2xl hover:text-gray-800" onclick="window.closeModal()">&times;</button>
-            <h2 class="text-2xl font-bold mb-6 text-blue-700" id="form-title">Dados do Produto</h2>
+            <h2 class="text-2xl font-bold mb-6 text-blue-700" id="form-title">Cadastro de Lote</h2>
             <form id="medication-form" class="space-y-4">
                 <input type="hidden" id="doc-id">
                 <div class="grid grid-cols-2 gap-4">
@@ -153,11 +153,14 @@
     <div id="import-modal" class="modal-overlay hidden no-print">
         <div class="modal-content shadow-2xl">
             <button class="absolute top-4 right-4 text-gray-400 text-2xl" onclick="window.closeImportModal()">&times;</button>
-            <h2 class="text-xl font-bold mb-4 text-purple-700 uppercase tracking-tight">Importação Inicial</h2>
+            <h2 class="text-xl font-bold mb-4 text-purple-700 uppercase tracking-tight">Importação de Produtos</h2>
+            <div class="bg-purple-50 p-4 rounded-lg border border-purple-100 mb-4 text-xs text-purple-800 leading-relaxed">
+                Ordem: <b>Barras, Interno, Nome, Lab, Qtd</b> (sem validade).
+            </div>
             <input type="file" id="bulk-file-input" accept=".csv, .tsv" class="w-full p-3 border rounded-xl bg-gray-50 mb-4 text-sm">
-            <label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Separador:</label>
+            <label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Delimitador:</label>
             <select id="delimiter-select" class="w-full p-3 border-none bg-gray-50 rounded-xl mb-6 text-sm shadow-inner"><option value=";">Ponto e Vírgula (;)</option><option value=",">Vírgula (,)</option><option value="\t">Tabulação (TSV)</option></select>
-            <button onclick="window.handleBulkImport()" class="w-full bg-purple-600 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition">Importar Planilha</button>
+            <button onclick="window.handleBulkImport()" class="w-full bg-purple-600 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition">Processar Importação</button>
         </div>
     </div>
 
@@ -175,6 +178,7 @@
         </div>
     </div>
 
+    <!-- Scanner -->
     <div id="scanner-modal" class="modal-overlay hidden no-print">
         <div class="modal-content shadow-2xl p-0 overflow-hidden">
             <div class="p-4 flex justify-between items-center bg-white border-b">
@@ -183,7 +187,7 @@
             </div>
             <div id="reader"></div>
             <div class="p-6 bg-gray-50 text-center border-t border-gray-100">
-                <p class="text-blue-800 text-sm font-bold uppercase tracking-widest italic">Modo de Alta Precisão (iPhone)</p>
+                <p class="text-blue-800 text-sm font-bold uppercase tracking-widest italic">iPhone 7 / 12 (Alta Precisão)</p>
             </div>
         </div>
     </div>
@@ -210,7 +214,7 @@
 
                 onAuthStateChanged(auth, u => { 
                     if(u) { 
-                        document.getElementById('db-status').textContent = "✅ Sistema Conectado";
+                        document.getElementById('db-status').textContent = "✅ Sistema Ligado";
                         document.getElementById('db-status').classList.replace('text-gray-400', 'text-green-600');
                         startSync(); 
                     } 
@@ -225,16 +229,18 @@
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), snap => {
                 allMedications = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 window.applyFilters();
+            }, err => {
+                window.showMessage("Erro de acesso aos dados.", "error");
             });
         }
 
-        // --- EXPOSIÇÃO GLOBAL DE FUNÇÕES ---
+        // --- EXPOSIÇÃO GLOBAL ---
         window.openCadastroModal = () => document.getElementById('medication-modal').classList.remove('hidden');
         window.closeModal = () => {
             document.getElementById('medication-modal').classList.add('hidden');
             document.getElementById('medication-form').reset();
             document.getElementById('doc-id').value = '';
-            document.getElementById('form-title').textContent = "Dados do Produto";
+            document.getElementById('form-title').textContent = "Cadastro de Lote";
             document.getElementById('barcode').disabled = false;
         };
         window.openImportModal = () => document.getElementById('import-modal').classList.remove('hidden');
@@ -243,8 +249,8 @@
         window.closeImportLotesModal = () => document.getElementById('import-lotes-modal').classList.add('hidden');
 
         window.applyFilters = () => {
-            const inp = document.getElementById('search-input');
-            const term = (inp ? inp.value : "").toLowerCase().trim();
+            const searchInputEl = document.getElementById('search-input');
+            const term = (searchInputEl ? searchInputEl.value : "").toLowerCase().trim();
             let filtered = allMedications;
             if (term) filtered = filtered.filter(m => (m.barcode + (m.internalCode||'') + m.description).toLowerCase().includes(term));
             filtered.sort((a, b) => (a.expirationDate || '9999-12').localeCompare(b.expirationDate || '9999-12'));
@@ -297,7 +303,7 @@
             return (y1 - y2) * 12 + (month1 - month2);
         }
 
-        // --- SCANNER ---
+        // --- SCANNER OTIMIZADO ---
         window.openScannerModal = function(mode) {
             window.scannerMode = mode;
             if(mode === 'BUSCA') window.clearSearch();
@@ -338,9 +344,9 @@
                 document.getElementById('internalCode').value = found.internalCode;
                 document.getElementById('description').value = found.description;
                 document.getElementById('laboratory').value = found.laboratory;
-                document.getElementById('form-title').textContent = "Adicionar Lote";
+                document.getElementById('form-title').textContent = "Adicionar Novo Lote";
                 document.getElementById('barcode').disabled = true;
-            } else { window.showMessage("Não localizado.", "error"); }
+            } else { window.showMessage("Produto não localizado.", "error"); }
         };
 
         window.loadForEdit = (id) => {
@@ -359,7 +365,7 @@
             }
         };
 
-        window.deleteMedication = async (id) => { if(confirm('Apagar este lote permanentemente?')) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id)); };
+        window.deleteMedication = async (id) => { if(confirm('Excluir este lote?')) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id)); };
 
         window.confirmDeleteAll = async () => {
             if(confirm('🛑 ATENÇÃO: Deseja apagar TODO o inventário?')) {
@@ -405,7 +411,7 @@
                         await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), data);
                     }
                 }
-                window.showMessage("Importação concluída!");
+                window.showMessage("Importação de Lotes Concluída!");
                 window.closeImportLotesModal();
             };
             reader.readAsText(file);
@@ -439,7 +445,7 @@
             const b = new Blob(["\uFEFF", c], { type: 'text/csv;charset=utf-8;' });
             const l = document.createElement('a');
             l.href = URL.createObjectURL(b);
-            l.download = 'souzafarma_relatorio.csv';
+            l.download = 'souzafarma_inventario.csv';
             l.click();
         };
 
@@ -460,7 +466,7 @@
             if(id) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'medicamentos', id), data);
             else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'medicamentos'), data);
             window.closeModal();
-            window.showMessage("Salvo!");
+            window.showMessage("Dados Gravados!");
         };
 
         window.showMessage = (text, type = 'success') => {
